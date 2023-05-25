@@ -1,0 +1,19 @@
+.input-list {
+    display: flex;
+    list-style-type: none;
+    margin-right: 5%;
+}
+
+.input-list li {
+    margin-right: 10%;
+}
+
+.title {
+    font-family: "Arial", sans-serif;
+    font-size: 32px;
+    color: #333;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 20px;
+}

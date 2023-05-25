@@ -1,0 +1,9 @@
+div {
+    margin-bottom: 10px;
+  }
+  
+  input[type="file"] {
+    border: 1px solid #ccc;
+    padding: 5px;
+  }
+  

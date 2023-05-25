@@ -1,0 +1,45 @@
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<!-- * * * * * * * * * * * The content below * * * * * * * * * * * -->
+<!-- * * * * * * * * * * is only a placeholder * * * * * * * * * * -->
+<!-- * * * * * * * * * * and can be replaced. * * * * * * * * * * * -->
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<!-- * * * * * * * * * Delete the template below * * * * * * * * * * -->
+<!-- * * * * * * * to get started with your project! * * * * * * * * -->
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<h1 class="title">
+  BEST PRACTICES Policy Tool
+</h1>
+
+
+<ul class="input-list">
+  <li>
+    <h1> Policy file </h1>
+    <p> Choose a file in JSON or XML format that describes the policies to be evaluated</p>
+
+    <app-input-component (filesSelected)="handleFilesSelected($event)"></app-input-component>
+
+  </li>
+  <li>
+    <h1> Flows file  </h1>
+    <app-input-component (filesSelected)="handleFilesSelected($event)"></app-input-component>
+
+  </li>
+  <li>
+    <h1> Networks file </h1>
+    <app-input-component (filesSelected)="handleFilesSelected($event)"></app-input-component>
+
+  </li>
+  
+</ul>
+
+  
+
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<!-- * * * * * * * * * * * The content above * * * * * * * * * * * -->
+<!-- * * * * * * * * * * is only a placeholder * * * * * * * * * * -->
+<!-- * * * * * * * * * * and can be replaced. * * * * * * * * * * * -->
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<!-- * * * * * * * * * * End of Placeholder * * * * * * * * * * * -->
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+
+<router-outlet></router-outlet>
