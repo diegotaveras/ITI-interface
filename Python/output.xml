@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<PolicyRuleSet dtdVersion="0.1">
+  <PolicyRule name="1" quantifier="not_forall" evaluate="dadawjdj w">
+    <Description>dada d</Description>
+  </PolicyRule>
+  <PolicyRule name="1" quantifier="not_forall" evaluate="dadawjdj w">
+    <Description>dada d</Description>
+  </PolicyRule>
+  <ObjectList name="dadwada" imported="True" compute="" />
+  <ObjectList name="dawd" imported="False" compute="" />
+</PolicyRuleSet>
