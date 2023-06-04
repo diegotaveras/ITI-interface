@@ -184,14 +184,12 @@ def askDictionary():
             }
         ]
         dictionary = prompt(askDictionary, style=style)
-            
         dictionaries.append(dictionary)
         continueDictionaries = prompt(continueAsking, style=style)
         askAgain = continueDictionaries['addDictionary']
         print(dictionary)
     
     return dictionaries
-
 
 
   
