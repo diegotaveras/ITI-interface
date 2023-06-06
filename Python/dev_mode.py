@@ -1,6 +1,7 @@
 from __future__ import print_function, unicode_literals
 import xml.etree.ElementTree as ET
 from PyInquirer import prompt,Separator, Token, style_from_dict
+from user_mode import Rule, ObjectList, Dictionary, Description, CreateXMLFile
 
 def askStandards():
     askStandards = [
@@ -78,9 +79,10 @@ def askRules():
             }
         ]
         print("Policy Rule #%s" %ruleNum)
-        rule = prompt(askRules, style=style)
+        rule_ans = prompt(askRules, style=style)
         
-        rule.update({'id': ruleNum})
+        rule = Rule(str(ruleNum))
+        rule.setFields(rule_ans['quantifier'], rule_ans['function'], Description(rule_ans['description']))
         rules.append(rule)
         continueRules = prompt(continueAsking, style=style)
         askAgain = continueRules['addRule']
@@ -120,7 +122,9 @@ def askObjects():
             'default': False
             }
         ]
-        objectList = prompt(askObjects, style=style)
+        objectList_ans = prompt(askObjects, style=style)
+        objectList = ObjectList(objectList_ans['name'])
+        objectList.setFields(objectList_ans['imported'], objectList_ans['compute'])
         objectLists.append(objectList)
         continueObjects = prompt(continueAsking, style=style)
         askAgain = continueObjects['addList']
@@ -150,7 +154,9 @@ def askDescription():
             'name': 'description',
         }
     ]
-    return prompt(askDescription, style=style)
+    description_ans = prompt(askDescription, style=style)
+    description = Description(description_ans['description'])
+    return description
 
 def askDictionary():
     dictionaries = []
@@ -183,7 +189,9 @@ def askDictionary():
             'default': False
             }
         ]
-        dictionary = prompt(askDictionary, style=style)
+        dictionary_ans = prompt(askDictionary, style=style)
+        dictionary = Dictionary(dictionary_ans['name'])
+        dictionary.setFields(dictionary_ans['imported'], dictionary_ans['compute'])
         dictionaries.append(dictionary)
         continueDictionaries = prompt(continueAsking, style=style)
         askAgain = continueDictionaries['addDictionary']
@@ -211,47 +219,17 @@ def DevMode():
     standards = askStandards()      #get Standards to follow 
 
     rules = askRules()          #get Rules for policy
-    for i in range(len(rules)):
-        policyRule = ET.SubElement(policyRuleSet, "PolicyRule")
-        policyRule.set("name", str(rules[i]['id']))
-        policyRule.set("quantifier", str(rules[i]["quantifier"]))
-        policyRule.set("evaluate", str(rules[i]["function"]))
-        if (rules[i]["description"] != ""):
-            description = ET.SubElement(policyRule, "Description")
-            description.text = rules[i]["description"]
-
-        print(policyRuleSet.attrib)
-
-
-    objectLists = askObjects()
-    for i in range(len(objectLists)):
-        objectList = ET.SubElement(policyRuleSet, "ObjectList")
-        objectList.set("name", str(objectLists[i]['name']))
-        objectList.set("imported", str(objectLists[i]["imported"]))
-        objectList.set("compute", str(objectLists[i]["compute"]))
     
-
-        print(policyRuleSet.attrib)
-    
+    objectLists = askObjects()    
     
     dictionaries = []
     wantDictionary = askIf("dictionary")        #ask if want to add dictionaries
     if wantDictionary["addCustom"]:             
         dictionaries = askDictionary()
-        for i in range(len(dictionaries)):
-            dictionary = ET.SubElement(policyRuleSet, "Dictionary")
-            dictionary.set("name", str(dictionaries[i]['name']))
-            dictionary.set("imported", str(dictionaries[i]["imported"]))
-            dictionary.set("compute", str(dictionaries[i]["compute"]))
-
-
-    wantDescription = askIf("description")   #ask if want to add a description
+                    
+    description = Description("")       
+    wantDescription = askIf("description")  #ask if want to add a description
     if (wantDescription['addCustom']):
-        description = ET.SubElement(policyRuleSet, "Description")
-        description.text = askDescription()['description']
+        description = askDescription()
 
-    tree = ET.ElementTree(policyRuleSet)
-
-    with open("output.xml", 'wb') as file: 
-        ET.indent(tree) 
-        tree.write(file,xml_declaration=True,encoding='utf-8')
+    CreateXMLFile(rules, objectLists, dictionaries, description)

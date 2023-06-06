@@ -44,32 +44,39 @@ class Rule:
         policy_quantifier_frame = LabelFrame(frame, text="Quantifier")
         policy_quantifier_frame.grid(row=0,column=1)
 
-        v = IntVar()
+        quantifier_options = {1:'for_all', 2: 'not_forall', 3:'exists', 4:'not_exists'}
+        quantifier_to_options = { value:str(key) for key, value in quantifier_options.items()}
+
+        v = IntVar(value= quantifier_to_options[rules[index].quantifier] if rules[index].quantifier != None else 0)
+    
+        
 
         for_all = Radiobutton(policy_quantifier_frame, variable=v, value=1,text='for_all').pack(anchor=W)
         not_forall = Radiobutton(policy_quantifier_frame, variable=v, value=2,text='not_forall').pack(anchor=W)
         exists = Radiobutton(policy_quantifier_frame, variable=v, value=3,text='exists').pack(anchor=W)
         not_exists = Radiobutton(policy_quantifier_frame, variable=v, value=4,text='not_exists').pack(anchor=W)
         
-        quantifier_options = {1:'for_all', 2: 'not_forall', 3:'exists', 4:'not_exists'}
+
 
         policy_evaluate_frame = LabelFrame(frame, text="Evaluate")
         policy_evaluate_frame.grid(row=0,column=2)
 
         evaluate = Entry(policy_evaluate_frame)
         evaluate.pack()
+        evaluate.insert(INSERT, rules[index].evaluate)
+
 
         policy_description_frame = LabelFrame(frame, text="Description")
         policy_description_frame.grid(row=1,column=2)
 
         description = Entry(policy_description_frame)
         description.pack()
+        description.insert(INSERT, rules[index].description)
 
         Button(frame, text= "Build rule", command= lambda: rules[index].setFields(quantifier_options[v.get()], evaluate.get(), Description(description.get()))).place(relx= 0.15, rely= .9, anchor= CENTER)
 
 
-        # top.mainloop()
-        print(rules)
+        top.mainloop()
 
 class ObjectList:
     def __init__(self, name):
@@ -112,7 +119,7 @@ class ObjectList:
         objList_imported_frame = LabelFrame(frame, text="Imported")
         objList_imported_frame.grid(row=0,column=1)
 
-        v = False
+        v = BooleanVar(value=objectLists[index].imported)
 
         imported = Checkbutton(objList_imported_frame, variable=v, text='Imported')
         imported.pack(anchor=W)
@@ -122,12 +129,13 @@ class ObjectList:
 
         compute = Entry(objList_compute_frame)
         compute.pack()
+        compute.insert(INSERT, objectLists[index].compute)
 
-        Button(frame, text= "Build Object List", command= lambda: objectLists[index].setFields(v, compute.get())).place(relx= 0.15, rely= .9, anchor= CENTER)
+
+        Button(frame, text= "Build Object List", command= lambda: objectLists[index].setFields(v.get(), compute.get())).place(relx= 0.15, rely= .9, anchor= CENTER)
 
 
-        # top.mainloop()
-        # print(rules)
+        top.mainloop()
 
 class Dictionary:
 
@@ -171,22 +179,25 @@ class Dictionary:
         dictionary_imported_frame = LabelFrame(frame, text="Imported")
         dictionary_imported_frame.grid(row=0,column=1)
 
-        v = False
+        v = BooleanVar(value=dictionaries[index].imported)
 
         imported = Checkbutton(dictionary_imported_frame, variable=v, text='Imported')
         imported.pack(anchor=W)
+      
+
 
         dictionary_compute_frame = LabelFrame(frame, text="Compute")
         dictionary_compute_frame.grid(row=0,column=2)
 
         compute = Entry(dictionary_compute_frame)
         compute.pack()
+        compute.insert(INSERT, dictionaries[index].compute)
 
-        Button(frame, text= "Build Dictionary", command= lambda: dictionaries[index].setFields(v, compute.get())).place(relx= 0.15, rely= .9, anchor= CENTER)
+
+        Button(frame, text= "Build Dictionary", command= lambda: dictionaries[index].setFields(v.get(), compute.get())).place(relx= 0.15, rely= .9, anchor= CENTER)
 
 
         top.mainloop()
-
 
 
 def UserMode():
