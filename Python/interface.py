@@ -3,7 +3,7 @@ from __future__ import print_function, unicode_literals
 import xml.etree.ElementTree as ET
 from PyInquirer import prompt,Separator, Token, style_from_dict
 
-from dev_mode import DevMode
+from dev_mode_v0 import DevMode
 from user_mode import UserMode
 import argparse
 from pyfiglet import Figlet

@@ -1,6 +1,9 @@
 from tkinter import *
+
 import xml.etree.ElementTree as ET
 import inspect
+import json
+from xmlparser import xmlparser
 
 class Description:
     def __init__(self, desc):
@@ -47,7 +50,7 @@ class Rule:
         quantifier_options = {1:'for_all', 2: 'not_forall', 3:'exists', 4:'not_exists'}
         quantifier_to_options = { value:str(key) for key, value in quantifier_options.items()}
 
-        v = IntVar(value= quantifier_to_options[rules[index].quantifier] if rules[index].quantifier != None else 0)
+        v = IntVar(value= quantifier_to_options[rules[index].quantifier] if rules[index].quantifier != "" else 0)
     
         
 
@@ -199,10 +202,14 @@ class Dictionary:
 
         top.mainloop()
 
-
-def UserMode():
+def PolicyCreator(my_policies):
     root = Tk()
     root.title("Policy Creator")
+
+    rules = []
+    objectLists = []
+    dictionaries = []
+    description = Description("")
 
     frame = Frame(root)
     frame.pack()
@@ -220,7 +227,7 @@ def UserMode():
     policy_description_frame.grid(row=4,column=0)
 
 
-    rules = []
+    
     ruleListbox = Listbox(policy_rules_frame,selectmode=SINGLE)
     ruleListbox.grid(row=0, column=2)
     another_frame = Frame(policy_rules_frame)
@@ -230,7 +237,7 @@ def UserMode():
     ruleListbox.bind("<<ListboxSelect>>", lambda event, arg=rules: Rule.OpenView(event, arg))
 
     
-    objectLists = []
+    
     objectListListbox = Listbox(policy_objectLists_frame,selectmode=SINGLE)
     objectListListbox.grid(row=0, column=2)
     add_objectList_button = Button(policy_objectLists_frame, text="Add object list...",command=lambda: ObjectList.AddItem(objectListListbox, objectLists, objList_entry))
@@ -240,7 +247,6 @@ def UserMode():
     objList_entry.grid(row=1,column=0)
 
 
-    dictionaries = []
     dictionaryListbox = Listbox(policy_dictionaries_frame,selectmode=SINGLE)
     dictionaryListbox.grid(row=0, column=2)
     add_dictionary_button = Button(policy_dictionaries_frame, text="Add dictionary...",command=lambda: Dictionary.AddItem(dictionaryListbox, dictionaries, dictionary_entry))
@@ -250,16 +256,199 @@ def UserMode():
     dictionary_entry.grid(row=1,column=0)
 
 
-    description = Description("")
     description_entry = Text(policy_description_frame, width=50, height=5)
     description_entry.grid(row=1,column=0)
     add_description_button = Button(policy_description_frame, text="Add description...",command=lambda: description.UpdateDescription(description_entry.get("1.0",'end-1c')))
     add_description_button.grid(row=0, column=0)
 
     
+    my_policy = Policy()
+    my_policy.Populate(rules, objectLists, dictionaries, description)
+    my_policies.append(my_policy)
+    mainloop()
+    
+
+
+class Policy:
+    def __init__(self):
+        self.rules = []
+        self.objectLists = []
+        self.dictionaries = []
+        self.description = Description("")
+    def Populate(self, rules, objectLists, dictionaries, description):
+        self.rules = rules
+        self.objectLists = objectLists
+        self.dictionaries = dictionaries
+        self.description = description
+    def PopulateFromJson(self,policyJson):
+        for each in policyJson:
+            if each == 'PolicyRule':
+                rule = Rule(policyJson[each]['@name'])
+                rule.setFields(policyJson[each]['@quantifier'], policyJson[each]['@evaluate'], Description(policyJson[each]['Description']))
+                self.rules.append(rule)
+            elif each == 'ObjectList':
+                objectList = ObjectList(policyJson[each]['@name'])
+                objectList.setFields(policyJson[each]['@imported'], policyJson[each]['@compute'])
+                self.objectLists.append(objectList)
+            elif each == 'Dictionary':
+                dictionary = Dictionary(policyJson[each]['@name'])
+                dictionary.setFields(policyJson[each]['@imported'], policyJson[each]['@compute'])
+                self.dictionaries.append(dictionary)
+            elif each == 'Description':
+                self.description.UpdateDescription(policyJson[each])
+    
+
+
+        
+
+
+
+
+def ActivePolicyFrame(event, message):
+    event.widget.configure(background='#A1CEE5')
+    event.widget.bind("<Leave>", lambda  event :event.widget.configure(background='#FAFAFA'))
+
+
+def FillRuleListbox(listbox, rules):
+    for i in range(len(rules)):
+        listbox.insert(END, "Policy Rule: " + rules[i].id)
+
+
+def FillObjectListListbox(listbox, objectLists):
+    for i in range(len(objectLists)):
+        listbox.insert(END, objectLists[i].name)
+
+def FillDictionariesListbox(listbox, dictionaries):
+    for i in range(len(dictionaries)):
+        listbox.insert(END, dictionaries[i].name)
+
+
+
+def OpenPolicyView(event, policies, index, my_policies):
+    policyJson = policies[index]['PolicyRuleSet']
+    print(policyJson)
+
+    top = Toplevel()
+    top.title(policies[index]['Name'])
+    frame = Frame(top)
+    frame.pack()
+
+    policy = Policy()
+    policy.PopulateFromJson(policyJson)
+    policy_rules_frame = LabelFrame(frame, text= "Rules")
+    policy_rules_frame.grid(row=0,column=0)
+
+    policy_objectLists_frame = LabelFrame(frame, text= "Object Lists")
+    policy_objectLists_frame.grid(row=0,column=1)
+
+    policy_dictionaries_frame = LabelFrame(frame, text= "Dictionaries")
+    policy_dictionaries_frame.grid(row=1,column=0)
+
+    policy_description_frame = LabelFrame(frame, text= "Description")
+    policy_description_frame.grid(row=1,column=1)
+
+    rulesListbox = Listbox(policy_rules_frame,selectmode=SINGLE)
+    FillRuleListbox(rulesListbox, policy.rules)
+    rulesListbox.grid(row=0, column=0)
+    rulesListbox.bind("<<ListboxSelect>>", lambda event, arg=policy.rules: Rule.OpenView(event, arg))
+
+    objectListsListbox = Listbox(policy_objectLists_frame,selectmode=SINGLE)
+    FillObjectListListbox(objectListsListbox, policy.objectLists)
+    objectListsListbox.grid(row=0, column=0)
+    objectListsListbox.bind("<<ListboxSelect>>", lambda event, arg=policy.objectLists: ObjectList.OpenView(event, arg))
+
+    dictionariesListbox= Listbox(policy_dictionaries_frame,selectmode=SINGLE)
+    FillDictionariesListbox(dictionariesListbox, policy.dictionaries)
+    dictionariesListbox.grid(row=0, column=0)
+    dictionariesListbox.bind("<<ListboxSelect>>", lambda event, arg=policy.dictionaries: Dictionary.OpenView(event, arg))
+
+
+    description_view = Text(policy_description_frame)
+    description_view.insert(END, policy.description.description)
+    description_view.grid(row=0, column=0)
+    
+
+    Button(frame, text= "Add Policy", command= lambda: my_policies.append(policy)).grid(row=2, columnspan=2)
+
+    top.mainloop()
+
+
+def RenderLibrary(my_policies):
+    library = json.load(open('library.json'))
+    policies = library["Policies"]
+
+    root = Tk()
+    root.title("Policy Creator Library")
+    frame = Frame(root)
+    
+    policies_frame = LabelFrame(frame, text="Policies",padx=40)
+    policies_frame.pack()
+    
+    # policies.pop(0)       test whether this works
+    if (not policies):
+        no_policy_msg = Message(policies_frame,text="No policies available.")
+        no_policy_msg.pack()
+
+    for i in range(len(policies)):
+
+
+        policy_frame = Frame(policies_frame,width=2)
+        print(policies[i]["Name"])
+        policy_name = Message(policy_frame,text=policies[i]["Name"])
+        policy_name.configure(background='#FAFAFA',width=40)
+        policy_name.bind("<Button-1>", lambda event, arg1=policies, arg2=i, arg3=my_policies: OpenPolicyView(event, arg1, arg2, arg3))
+        policy_name.bind("<Enter>", lambda  event, arg=policy_name : ActivePolicyFrame(event, arg))
+
+        policy_name.pack()
+        policy_frame.grid(row=i,column=0)
+        
+    frame.pack()
+
     mainloop()
 
-    CreateXMLFile(rules, objectLists, dictionaries, description)
+
+
+def UserMode():
+    
+    my_policies = [] 
+    # RenderLibrary(my_policies)
+    # print(my_policies)
+    PolicyCreator(my_policies)
+    
+    my_rules = []
+    my_objectLists = []
+    my_dictionaries = []
+    print(len(my_policies))
+    for i in range(len(my_policies)):
+        
+        my_rules.extend(my_policies[i].rules)
+        my_objectLists.extend(my_policies[i].objectLists)
+        my_dictionaries.extend(my_policies[i].dictionaries)
+        print(len(my_policies))
+    for each in my_policies:
+        print(type(each))
+    my_description = my_policies[len(my_policies) - 1].description 
+
+
+    CreateXMLFile(my_rules, my_objectLists, my_dictionaries, my_description)
+
+    AddPolicyToLibrary('output.xml', "Test policy")
+
+def AddPolicyToLibrary(policy, name):
+    json_str = xmlparser(policy, 'output.json')
+    library = json.load(open('library.json','r'))
+
+    policy_to_add = {"Name" : name}
+    policy_to_add.update({"PolicyRuleSet": json.loads(json_str)})
+
+    print(json_str)
+    library["Policies"].append(policy_to_add)
+    json_string = json.dumps(library, indent=4)
+    print(str(library))
+    # out = open('library.json', "w")
+    # out.write(json_string)
+    # out.close()
+    return 
 
 
 def CreateXMLFile(rules, objectLists, dictionaries, description):

@@ -1,0 +1,50 @@
+{ "Policies" : 
+    [
+        {
+        "Name": "David's Policy",
+        "PolicyRuleSet": {
+            "@dtdVersion": "0.1",
+            "PolicyRule": {
+                "@name": "1",
+                "@quantifier": "exists",
+                "@evaluate": "dwadawd",
+                "Description": "wadawdwa"
+            },
+            "ObjectList": {
+                "@name": "pingalinwadaw",
+                "@imported": "True",
+                "@compute": "dwadwadwadwa"
+            },
+            "Dictionary": {
+                "@name": "dwafor adkan1",
+                "@imported": "True",
+                "@compute": "dawdawdwadawd"
+            },
+            "Description": "dwadwadwadawdaw"
+            }
+        },
+        {
+            "Name": "Diego's Policy",
+            "PolicyRuleSet": {
+                "@dtdVersion": "0.1",
+                "PolicyRule": {
+                    "@name": "2",
+                    "@quantifier": "exists",
+                    "@evaluate": "dwadawd",
+                    "Description": "w222"
+                },
+                "ObjectList": {
+                    "@name": "dwadwadaw",
+                    "@imported": "True",
+                    "@compute": "dw12241241wa"
+                },
+                "Dictionary": {
+                    "@name": "dwad12121",
+                    "@imported": "False",
+                    "@compute": "dawdawdwadawd"
+                },
+                "Description": "dwadwadwadawdaw"
+                }
+            }     
+    ]
+}
