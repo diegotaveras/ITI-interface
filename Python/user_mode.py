@@ -5,6 +5,7 @@ import inspect
 import json
 from xmlparser import xmlparser
 
+
 class Description:
     def __init__(self, desc):
         self.description = desc
@@ -271,6 +272,7 @@ def PolicyCreator(my_policies):
 
 class Policy:
     def __init__(self):
+        self.name = ""
         self.rules = []
         self.objectLists = []
         self.dictionaries = []
@@ -280,28 +282,47 @@ class Policy:
         self.objectLists = objectLists
         self.dictionaries = dictionaries
         self.description = description
-    def PopulateFromJson(self,policyJson):
+    def PopulateFromJson(self,policy):
+        self.name = policy["Name"]
+        policyJson = policy["PolicyRuleSet"]
         for each in policyJson:
-            if each == 'PolicyRule':
-                rule = Rule(policyJson[each]['@name'])
-                rule.setFields(policyJson[each]['@quantifier'], policyJson[each]['@evaluate'], Description(policyJson[each]['Description']))
-                self.rules.append(rule)
-            elif each == 'ObjectList':
-                objectList = ObjectList(policyJson[each]['@name'])
-                objectList.setFields(policyJson[each]['@imported'], policyJson[each]['@compute'])
-                self.objectLists.append(objectList)
-            elif each == 'Dictionary':
-                dictionary = Dictionary(policyJson[each]['@name'])
-                dictionary.setFields(policyJson[each]['@imported'], policyJson[each]['@compute'])
-                self.dictionaries.append(dictionary)
-            elif each == 'Description':
+            if each == "PolicyRule":
+                print(policyJson[each])
+                if type(policyJson[each]) is dict:
+                    rule = Rule(policyJson[each]['@name'])
+                    rule.setFields(policyJson[each]['@quantifier'], policyJson[each]['@evaluate'], Description(policyJson[each]['Description']) if "Description" in policyJson[each] else Description(""))
+                    self.rules.append(rule)
+                else:
+                    for i in range(len(policyJson[each])):
+                        rule = Rule(policyJson[each][i]['@name'])
+                        rule.setFields(policyJson[each][i]['@quantifier'], policyJson[each][i]['@evaluate'], Description(policyJson[each][i]['Description']) if "Description" in policyJson[each][i] else Description(""))
+                        self.rules.append(rule)
+
+            elif each == "ObjectList":
+                print(type(policyJson[each]))
+                if type(policyJson[each]) is dict:
+                    objectList = ObjectList(policyJson[each]['@name'])
+                    objectList.setFields(policyJson[each]['@imported'], policyJson[each]['@compute'])
+                    self.objectLists.append(objectList)
+                else:
+                    for i in range(len(policyJson[each])):
+                        objectList = ObjectList(policyJson[each][i]['@name'])
+                        objectList.setFields(policyJson[each][i]['@imported'], policyJson[each][i]['@compute'])
+                        self.objectLists.append(objectList)
+                
+            elif each == "Dictionary":
+                if type(policyJson[each]) is dict:
+                    dictionary = Dictionary(policyJson[each]['@name'])
+                    dictionary.setFields(policyJson[each]['@imported'], policyJson[each]['@compute'])
+                    self.dictionaries.append(dictionary)
+                else:
+                    for i in range(len(policyJson[each])):
+                        dictionary = Dictionary(policyJson[each][i]['@name'])
+                        dictionary.setFields(policyJson[each][i]['@imported'], policyJson[each][i]['@compute'])
+                        self.dictionaries.append(dictionary)
+                
+            elif each == "Description":
                 self.description.UpdateDescription(policyJson[each])
-    
-
-
-        
-
-
 
 
 def ActivePolicyFrame(event, message):
@@ -325,7 +346,7 @@ def FillDictionariesListbox(listbox, dictionaries):
 
 
 def OpenPolicyView(event, policies, index, my_policies):
-    policyJson = policies[index]['PolicyRuleSet']
+    policyJson = policies[index]
     print(policyJson)
 
     top = Toplevel()
@@ -406,13 +427,50 @@ def RenderLibrary(my_policies):
 
     mainloop()
 
+def PolicyAdderView():
+    root = Tk()
+    root.title("Publish Policy")
+    frame = Frame(root)
+    # frame.grid(row=0,column=0,padx=40)
+    frame.place(in_=root, anchor="c", relx=.5, rely=.5)
 
+    root.geometry("650x300")
+    policy_message_frame = Message(frame,text="Do you want to publish your policy to the library?", width=400)
+    policy_message_frame.grid(row=0,columnspan=2)
+
+    my_policy_name = Entry(frame)
+    my_policy_name.grid(row=1,columnspan=2,pady=10)
+    button_no = Button(frame, text= "No", command= lambda: quit(),background='#FA6B84').grid(row=2, column=0,ipadx=40, padx=40)
+    button_yes = Button(frame, text= "Yes", command= lambda: AddPolicyIfValid(my_policy_name.get()),background='#90EF90').grid(row=2, column=1,ipadx=40)
+
+    # AddPolicyToLibrary('output.xml', En)
+    mainloop()
+
+def AddPolicyIfValid(name):
+    top = Toplevel()
+    frame = Frame(top)
+    frame.place(in_=top, anchor="c", relx=.5, rely=.5)
+    top.geometry("650x300")
+    if name == "":
+        top.title("Name Not Valid")
+        policy_message_frame = Message(frame,text="Name cannot be blank. Please enter a name in the field provided.", width=400)
+        button_ok = Button(frame, text= "Ok", command= lambda: top.destroy(),background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
+
+    else:
+        AddPolicyToLibrary('output.xml', name)
+        top.title("Succesfully Published " + name)
+        policy_message_frame = Message(frame,text="Your policy \"" + name + "\" has been successfully added to the library!", width=400)
+        button_ok = Button(frame, text= "Ok", command= lambda: quit(), background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
+
+    policy_message_frame.grid(row=0,columnspan=2)
+
+    top.mainloop()
 
 def UserMode():
     
     my_policies = [] 
-    # RenderLibrary(my_policies)
-    # print(my_policies)
+    RenderLibrary(my_policies)
+    print(my_policies)
     PolicyCreator(my_policies)
     
     my_rules = []
@@ -427,27 +485,26 @@ def UserMode():
         print(len(my_policies))
     for each in my_policies:
         print(type(each))
-    my_description = my_policies[len(my_policies) - 1].description 
+    my_description = my_policies[len(my_policies) - 1].description
 
 
     CreateXMLFile(my_rules, my_objectLists, my_dictionaries, my_description)
+    PolicyAdderView()
+    
 
-    AddPolicyToLibrary('output.xml', "Test policy")
-
-def AddPolicyToLibrary(policy, name):
-    json_str = xmlparser(policy, 'output.json')
+def AddPolicyToLibrary(policy_xml, name):
+    json_str = xmlparser(policy_xml, 'output.json')
     library = json.load(open('library.json','r'))
 
     policy_to_add = {"Name" : name}
-    policy_to_add.update({"PolicyRuleSet": json.loads(json_str)})
+    policy_to_add.update({"PolicyRuleSet": json.loads(json_str)["PolicyRuleSet"]})
 
-    print(json_str)
     library["Policies"].append(policy_to_add)
     json_string = json.dumps(library, indent=4)
-    print(str(library))
-    # out = open('library.json', "w")
-    # out.write(json_string)
-    # out.close()
+    
+    out = open('library.json', "w", encoding='utf-8')
+    out.write(json_string)
+    out.close()
     return 
 
 
