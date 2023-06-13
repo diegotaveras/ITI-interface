@@ -212,7 +212,6 @@ class Policy:
         policyJson = policy["PolicyRuleSet"]
         for each in policyJson:
             if each == "PolicyRule":
-                print(policyJson[each])
                 if type(policyJson[each]) is dict:
                     rule = Rule(policyJson[each]['@name'])
                     rule.setFields(policyJson[each]['@quantifier'], policyJson[each]['@evaluate'], Description(policyJson[each]['Description']) if "Description" in policyJson[each] else Description(""))
@@ -272,6 +271,12 @@ def PolicyCreator(my_policies):
 
     policy_description_frame = LabelFrame(frame, text="Policy Description")
     policy_description_frame.grid(row=4,column=0)
+
+    done_button_frame = Frame(frame)
+    done_button_frame.grid(row=5,column=0)
+
+    button_done = Button(done_button_frame, text="Done", background='#86C5D8', command= lambda: root.destroy(),padx=20).pack()
+
 
     ruleListbox = Listbox(policy_rules_frame,selectmode=SINGLE)
     ruleListbox.grid(row=0, column=2)
@@ -335,6 +340,7 @@ def OpenPolicyView(event, policies, my_policies):
 
     policy = Policy()
     policy.PopulateFromJson(policyJson)
+
     policy_rules_frame = LabelFrame(frame, text= "Rules")
     policy_rules_frame.grid(row=0,column=0)
 
@@ -362,19 +368,39 @@ def OpenPolicyView(event, policies, my_policies):
     dictionariesListbox.grid(row=0, column=0)
     dictionariesListbox.bind("<<ListboxSelect>>", lambda event, arg=policy.dictionaries: Dictionary.OpenView(event, arg))
 
-
     description_view = Text(policy_description_frame)
     description_view.insert(END, policy.description.description)
     description_view.grid(row=0, column=0)
     
     def AddPolicy():
         top.destroy()
+        event.widget.itemconfig(index, {'bg':'#90EF90'})
+        event.widget.selection_clear(index)
         my_policies.append(policy)
 
-    Button(frame, text= "Add Policy", background='#86C5D8',command= lambda: AddPolicy()).grid(row=2, columnspan=2)
+    def RemovePolicy(ind):
+        top.destroy()
+        event.widget.itemconfig(index, {'bg':'white'})
+        event.widget.selection_clear(index)
+        my_policies.pop(ind)
+
+    def FindPolicy():
+        global ind 
+        for i in range(len(my_policies)):
+            if my_policies[i].name == policies[index]['Name']:
+                ind = i
+                return True
+        return False
+        
+    if not FindPolicy():
+        Button(frame, text= "Add Policy", background='#86C5D8',command= lambda: AddPolicy()).grid(row=2, columnspan=2)
+    else:
+        Button(frame, text= "Remove Policy", background='#FA6B84',command= lambda: RemovePolicy(ind)).grid(row=2, columnspan=2)
 
     top.mainloop()
 
+
+#This function loads and renders the library the user to pick from. 
 def RenderLibrary(my_policies):
     library = json.load(open('library.json'))
     policies = library["Policies"]
@@ -383,7 +409,8 @@ def RenderLibrary(my_policies):
     root.title("Policy Creator Library")
     root.geometry("500x650")
     frame = Frame(root)
-    
+    frame.pack()
+
     policies_frame = LabelFrame(frame, text="Policies",padx=40)
     policies_frame.pack(side=LEFT)
 
@@ -411,10 +438,14 @@ def RenderLibrary(my_policies):
     if (not policies):
         no_policy_msg = Message(policies_frame,text="No policies available.")
         no_policy_msg.pack()
+        mainloop()
 
-    library_list = Listbox(policies_frame, height=30)
+    scrollbar = Scrollbar(policies_frame)
+    scrollbar.pack( side = RIGHT, fill = Y )
+    library_list = Listbox(policies_frame, height=30, activestyle='none',  yscrollcommand = scrollbar.set)
     library_list.pack()
-    library_list.bind("<<ListboxSelect>>", lambda event, arg1=policies,  arg3=my_policies: OpenPolicyView(event, arg1, arg3))
+    library_list.bind("<Double-Button-1>", lambda event, arg1=policies,  arg3=my_policies: OpenPolicyView(event, arg1, arg3))
+    scrollbar.config( command = library_list.yview )
 
     for i in range(len(policies)):
         library_list.insert(END, policies[i]["Name"])
@@ -427,8 +458,6 @@ def RenderLibrary(my_policies):
         # policy_name.pack()
         # policy_frame.grid(row=i,column=0)
         
-    frame.pack()
-
     mainloop()
     return switch_
 
@@ -548,8 +577,7 @@ def UserMode():
     ruleNum = 1
     for i in range(len(my_policies)):
         for k in range(len(my_policies[i].rules)):      #when creating my_policies, we overwrite the rule id's to be sequentially increasing, 
-            print(my_policies[i].rules[k].id)               #regardless of their original id's in their respective Policies.
-            my_policies[i].rules[k].id = str(ruleNum)
+            my_policies[i].rules[k].id = str(ruleNum)    #regardless of their original id's in their respective Policies.
             my_rules.append(my_policies[i].rules[k])
             ruleNum = ruleNum + 1
         my_objectLists.extend(my_policies[i].objectLists)
