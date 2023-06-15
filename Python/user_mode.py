@@ -15,7 +15,7 @@ class Description:
 class Rule:
     def __init__(self, id):
         self.id = id
-        self.quantifier = ""
+        self.quantifier = "for_all"
         self.evaluate = ""
         self.description = ""
     def setFields(self, quant, eval, desc):
@@ -24,18 +24,24 @@ class Rule:
         self.description = desc.description
 
     @staticmethod
-    def AddItem(ruleList, rules):
-        ruleList.insert(END, "Policy Rule " + str(ruleList.size() + 1))
-        rules.append(Rule(ruleList.size()))
+    #only allows adding a rule if at least an object list or dictionary exists
+    def AddItem(ruleList, rules, itemsExist):
+        if itemsExist:
+            ruleList.insert(END, "Policy Rule " + str(ruleList.size() + 1))
+            rules.append(Rule(ruleList.size()))
 
     @staticmethod
-    def OpenView(event,rules):
+    def OpenView(event,rules,objectLists, dictionaries):
+        
         selection = event.widget.curselection()
+        print(selection)
         index = selection[0]
         data = event.widget.get(index)
 
         top = Toplevel()
         top.title(data)
+
+        top.geometry("400x500")
         frame = Frame(top)
         frame.pack()
         policy_id_frame = Label(frame, text="Rule " + str(rules[index].id))
@@ -47,34 +53,98 @@ class Rule:
         quantifier_options = {1:'for_all', 2: 'not_forall', 3:'exists', 4:'not_exists'}
         quantifier_to_options = { value:str(key) for key, value in quantifier_options.items()}
 
-        v = IntVar(value= quantifier_to_options[rules[index].quantifier] if rules[index].quantifier != "" else 0)
+        v = IntVar(value= quantifier_to_options[rules[index].quantifier] if rules[index].quantifier != "" else 1)
     
-        for_all = Radiobutton(policy_quantifier_frame, variable=v, value=1,text='for_all').pack(anchor=W)
-        not_forall = Radiobutton(policy_quantifier_frame, variable=v, value=2,text='not_forall').pack(anchor=W)
-        exists = Radiobutton(policy_quantifier_frame, variable=v, value=3,text='exists').pack(anchor=W)
-        not_exists = Radiobutton(policy_quantifier_frame, variable=v, value=4,text='not_exists').pack(anchor=W)
+        for_all = Radiobutton(policy_quantifier_frame, variable=v, value=1,text="for_all").pack(anchor=W)
+        not_forall = Radiobutton(policy_quantifier_frame, variable=v, value=2,text="not_forall").pack(anchor=W)
+        exists = Radiobutton(policy_quantifier_frame, variable=v, value=3,text="exists").pack(anchor=W)
+        not_exists = Radiobutton(policy_quantifier_frame, variable=v, value=4,text="not_exists").pack(anchor=W)
     
         policy_evaluate_frame = LabelFrame(frame, text="Evaluate")
-        policy_evaluate_frame.grid(row=0,column=2)
+        policy_evaluate_frame.grid(row=1,column=2)
 
-        evaluate = Entry(policy_evaluate_frame)
+        evaluate =  Listbox(policy_evaluate_frame)
         evaluate.pack()
-        evaluate.insert(INSERT, rules[index].evaluate)
+        # evaluate.insert(INSERT, rules[index].evaluate)
 
         policy_description_frame = LabelFrame(frame, text="Description")
-        policy_description_frame.grid(row=1,column=2)
+        policy_description_frame.grid(row=2,column=2)
 
         description = Entry(policy_description_frame)
         description.pack()
+
+        library = json.load(open('library.json'))
+        evaluateFunctions = library["EvaluateFunctions"]
+
+        for i in range(len(evaluateFunctions)):                
+            evaluate.insert(END, evaluateFunctions[i]["Name"] + "()")
+
+        
+        currEvaluate = Label(frame, text= "Current evaluate: " + rules[index].evaluate)
+        currEvaluate.grid(row=0, column=2, columnspan=3)
+        evaluate.bind("<Double-Button-1>" , lambda event: EvaluateFunctionView(event, currEvaluate, rules[index], objectLists, dictionaries))
+        
+        
         description.insert(INSERT, rules[index].description)
 
         def BuildRule():
-            rules[index].setFields(quantifier_options[v.get()], evaluate.get(), Description(description.get()))
+            rules[index].setFields(quantifier_options[v.get()], rules[index].evaluate, Description(description.get()))
             top.destroy()
 
-        Button(frame, text= "Build rule", background='#86C5D8', command= lambda: BuildRule()).grid(row=2,columnspan=3,pady=10)
+        Button(frame, text= "Build rule", background='#86C5D8', command= lambda: BuildRule()).grid(row=3,columnspan=3,pady=10)
 
         top.mainloop()
+
+def EvaluateFunctionView(event, currEvaluate, rule, objectLists, dictionaries):
+    index = event.widget.curselection()[0]
+    data = event.widget.get(index)
+
+    root = Toplevel()
+    root.title(data)
+    # root.geometry("500x900")
+    frame = Frame(root)
+    frame.pack()                
+  
+    eval_args = LabelFrame(frame,text="Function arguments")
+    eval_args.grid(row=0,column=1,padx=20)  
+
+    args_listbox = Listbox(eval_args, selectmode=MULTIPLE, activestyle='none')    
+    args_listbox.grid(row=0,column=1) 
+
+    for i in range(len(objectLists)):
+        args_listbox.insert(END, objectLists[i].name)
+    for i in range(len(dictionaries)):
+        args_listbox.insert(END, dictionaries[i].name)
+
+    arguments = []
+
+    def AddArg(event, arguments):
+        idx = event.widget.curselection()[0]
+        if event.widget.get(idx) not in arguments:
+            event.widget.itemconfig(idx, {'bg':'#90EF90'})
+            arguments.append(event.widget.get(idx))
+        print(arguments)
+    args_listbox.bind("<<ListboxSelect>>",  lambda event: AddArg(event, arguments))
+
+    def UpdateEvaluateFunction(data):
+        data = data[:-2]
+        signature = data + "("
+        if rule.quantifier == "for_all":
+            for k in range(len(arguments) - 1):
+                signature = signature + "@" + arguments[k] + ","
+            signature = signature + "@" + arguments[-1] + ")"
+        else:
+            for k in range(len(arguments) - 1):
+                signature = signature + arguments[k] + ","
+            signature = signature + arguments[-1] + ")"
+        rule.evaluate = signature
+        currEvaluate.config(text="Current evaluate: " + rule.evaluate)
+        root.destroy()
+
+    button_done = Button(frame, text="Done", background='#86C5D8', command= lambda: UpdateEvaluateFunction(data), padx=20)
+    button_done.grid(row=1,columnspan=2,pady=20)
+
+    root.mainloop()  
 
 class ObjectList:
     def __init__(self, name):
@@ -213,35 +283,35 @@ class Policy:
         for each in policyJson:
             if each == "PolicyRule":
                 if type(policyJson[each]) is dict:
-                    rule = Rule(policyJson[each]['@name'])
-                    rule.setFields(policyJson[each]['@quantifier'], policyJson[each]['@evaluate'], Description(policyJson[each]['Description']) if "Description" in policyJson[each] else Description(""))
+                    rule = Rule(policyJson[each]['name'])
+                    rule.setFields(policyJson[each]['quantifier'], policyJson[each]['evaluate'], Description(policyJson[each]['Description']) if "Description" in policyJson[each] else Description(""))
                     self.rules.append(rule)
                 else:
                     for i in range(len(policyJson[each])):
-                        rule = Rule(policyJson[each][i]['@name'])
-                        rule.setFields(policyJson[each][i]['@quantifier'], policyJson[each][i]['@evaluate'], Description(policyJson[each][i]['Description']) if "Description" in policyJson[each][i] else Description(""))
+                        rule = Rule(policyJson[each][i]['name'])
+                        rule.setFields(policyJson[each][i]['quantifier'], policyJson[each][i]['evaluate'], Description(policyJson[each][i]['Description']) if "Description" in policyJson[each][i] else Description(""))
                         self.rules.append(rule)
 
             elif each == "ObjectList":
                 if type(policyJson[each]) is dict:
-                    objectList = ObjectList(policyJson[each]['@name'])
-                    objectList.setFields(policyJson[each]['@imported'], policyJson[each]['@compute'])
+                    objectList = ObjectList(policyJson[each]['name'])
+                    objectList.setFields(policyJson[each]['imported'], policyJson[each]['compute'])
                     self.objectLists.append(objectList)
                 else:
                     for i in range(len(policyJson[each])):
-                        objectList = ObjectList(policyJson[each][i]['@name'])
-                        objectList.setFields(policyJson[each][i]['@imported'], policyJson[each][i]['@compute'])
+                        objectList = ObjectList(policyJson[each][i]['name'])
+                        objectList.setFields(policyJson[each][i]['imported'], policyJson[each][i]['compute'])
                         self.objectLists.append(objectList)
                 
             elif each == "Dictionary":
                 if type(policyJson[each]) is dict:
-                    dictionary = Dictionary(policyJson[each]['@name'])
-                    dictionary.setFields(policyJson[each]['@imported'], policyJson[each]['@compute'])
+                    dictionary = Dictionary(policyJson[each]['name'])
+                    dictionary.setFields(policyJson[each]['imported'], policyJson[each]['compute'])
                     self.dictionaries.append(dictionary)
                 else:
                     for i in range(len(policyJson[each])):
-                        dictionary = Dictionary(policyJson[each][i]['@name'])
-                        dictionary.setFields(policyJson[each][i]['@imported'], policyJson[each][i]['@compute'])
+                        dictionary = Dictionary(policyJson[each][i]['name'])
+                        dictionary.setFields(policyJson[each][i]['imported'], policyJson[each][i]['compute'])
                         self.dictionaries.append(dictionary)
                 
             elif each == "Description":
@@ -251,6 +321,7 @@ class Policy:
 def PolicyCreator(my_policies):
     root = Tk()
     root.title("Policy Creator")
+    root.geometry("500x900")
 
     rules = []
     objectLists = []
@@ -261,30 +332,29 @@ def PolicyCreator(my_policies):
     frame.pack()
     
     policy_rules_frame = LabelFrame(frame, text="Policy Rules")
-    policy_rules_frame.grid(row=0,column=0)
+    policy_rules_frame.grid(row=2,column=0)
 
     policy_objectLists_frame = LabelFrame(frame, text="Policy Object Lists")
-    policy_objectLists_frame.grid(row=1,column=0)
+    policy_objectLists_frame.grid(row=0,column=0)
 
     policy_dictionaries_frame = LabelFrame(frame, text="Policy Dictionaries")
-    policy_dictionaries_frame.grid(row=2,column=0)
+    policy_dictionaries_frame.grid(row=1,column=0)
 
     policy_description_frame = LabelFrame(frame, text="Policy Description")
-    policy_description_frame.grid(row=4,column=0)
+    policy_description_frame.grid(row=3,column=0)
 
     done_button_frame = Frame(frame)
-    done_button_frame.grid(row=5,column=0)
+    done_button_frame.grid(row=4,column=0)
 
     button_done = Button(done_button_frame, text="Done", background='#86C5D8', command= lambda: root.destroy(),padx=20).pack()
-
 
     ruleListbox = Listbox(policy_rules_frame,selectmode=SINGLE)
     ruleListbox.grid(row=0, column=2)
     another_frame = Frame(policy_rules_frame)
     another_frame.grid(row=0, column=0, padx=30)
-    add_rule_button = Button(another_frame, text="Add rule...",command=lambda: Rule.AddItem(ruleListbox, rules))
+    add_rule_button = Button(another_frame, text="Add rule...",command=lambda: Rule.AddItem(ruleListbox, rules, dictionaries or objectLists))
     add_rule_button.grid(row=0, column=0)
-    ruleListbox.bind("<<ListboxSelect>>", lambda event, arg=rules: Rule.OpenView(event, arg))
+    ruleListbox.bind("<<ListboxSelect>>", lambda event, arg=rules, arg2=objectLists, arg3=dictionaries: Rule.OpenView(event, arg, arg2, arg3))
 
     objectListListbox = Listbox(policy_objectLists_frame,selectmode=SINGLE)
     objectListListbox.grid(row=0, column=2)
@@ -378,24 +448,24 @@ def OpenPolicyView(event, policies, my_policies):
         event.widget.selection_clear(index)
         my_policies.append(policy)
 
-    def RemovePolicy(ind):
+    def RemovePolicy(removeIndex):
         top.destroy()
         event.widget.itemconfig(index, {'bg':'white'})
         event.widget.selection_clear(index)
-        my_policies.pop(ind)
+        my_policies.pop(removeIndex)
 
     def FindPolicy():
-        global ind 
+        global removeIndex 
         for i in range(len(my_policies)):
             if my_policies[i].name == policies[index]['Name']:
-                ind = i
+                removeIndex = i
                 return True
         return False
         
     if not FindPolicy():
         Button(frame, text= "Add Policy", background='#86C5D8',command= lambda: AddPolicy()).grid(row=2, columnspan=2)
     else:
-        Button(frame, text= "Remove Policy", background='#FA6B84',command= lambda: RemovePolicy(ind)).grid(row=2, columnspan=2)
+        Button(frame, text= "Remove Policy", background='#FA6B84',command= lambda: RemovePolicy(removeIndex)).grid(row=2, columnspan=2)
 
     top.mainloop()
 
@@ -406,8 +476,9 @@ def RenderLibrary(my_policies):
     policies = library["Policies"]
     
     root = Tk()
+
     root.title("Policy Creator Library")
-    root.geometry("500x650")
+    root.geometry("500x600")
     frame = Frame(root)
     frame.pack()
 
@@ -460,6 +531,50 @@ def RenderLibrary(my_policies):
         
     mainloop()
     return switch_
+
+def FunctionCreator():
+    # json_str = xmlparser(policy_xml, 'output.json')      
+    root = Tk()
+    root.title("Function Creator")
+    root.geometry("500x400")
+
+
+    frame = Frame(root)
+    frame.pack()                
+
+    eval_name = LabelFrame(frame, text="Function name")
+    eval_name.grid(row=0,column=0,padx=20)  
+    # eval_args = LabelFrame(frame,text="Function arguments")
+    # eval_args.grid(row=0,column=1,padx=20)  
+
+    name_entry = Entry(eval_name) 
+    name_entry.grid(row=0,column=0)
+
+    
+
+    # args_listbox = Listbox(eval_args)    
+    # args_listbox.grid(row=0,column=1) 
+
+    # args_entry = Entry(eval_args) 
+    # args_entry.grid(row=1,column=0)
+
+    # arguments = []
+
+    # button_args = Button(eval_args, text="Add args...", background='#86C5D8', command= lambda: AddArg(arguments, args_listbox, args_entry.get()) if args_entry.get().strip() != "" else None, padx=10)
+    # button_args.grid(row=0,column=0,pady=20)
+
+
+    button_done = Button(frame, text="Done", background='#86C5D8', command= lambda:  WriteEvalToLibrary(name_entry.get()), padx=20)
+    button_done.grid(row=1,columnspan=2,pady=20)
+
+    mainloop()
+    
+def AddArg(args, listbox, arg):
+    args.append(arg)
+    listbox.insert(END, arg)
+
+
+
 
 #this function displays the prompt to ask whether to 'publish' their assembled policy
 def PolicyAdderView():                      
@@ -522,6 +637,22 @@ def WritePolicyToLibrary(policy_xml, name):
 
     library["Policies"].append(policy_to_add)
     json_string = json.dumps(library, indent=4)
+
+    out = open('library.json', "w", encoding='utf-8')
+    out.write(json_string)
+    out.close()
+    return 
+
+def WriteEvalToLibrary(name):
+    if (name.replace(" ", "").strip() != ""):
+        return
+    library = json.load(open('library.json','r'))                   
+
+    function_to_add = {"Name" : name}
+    # function_to_add.update({"Args": args})
+
+    library["EvaluateFunctions"].append(function_to_add)
+    json_string = json.dumps(library, indent=4)
     
     out = open('library.json', "w", encoding='utf-8')
     out.write(json_string)
@@ -569,6 +700,8 @@ def UserMode():
     my_policies = [] 
     devMode = RenderLibrary(my_policies)        #RenderLibrary returns a boolean that indicates whether the user picked DevMode
     print(my_policies)
+    FunctionCreator() if devMode else None
+
     
     my_rules = []
     my_objectLists = []
