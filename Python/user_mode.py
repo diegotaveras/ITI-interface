@@ -7,7 +7,6 @@ from xmlparser import xmlparser
 import subprocess
 import os
 
-
 class Description:
     def __init__(self, desc):
         self.description = desc
@@ -122,7 +121,6 @@ class ObjectList:
     @staticmethod
     def OpenView(event,objectLists, dictionaries):
         selection = event.widget.curselection()
-        print(selection)
         index = selection[0]
         data = event.widget.get(index)
 
@@ -178,7 +176,6 @@ class Dictionary:
     def setFields(self, imported, compute):
         self.imported = imported
         self.compute = compute
-        print(inspect.getmembers(self))
 
     @staticmethod
     def AddItem(dictionaryListbox, dictionaries, entry):
@@ -189,12 +186,10 @@ class Dictionary:
         
         dictionaries.append(Dictionary(name))
         entry.delete(0,END)
-        print(dictionaries)
 
     @staticmethod
     def OpenView(event,dictionaries, objectLists):
         selection = event.widget.curselection()
-        print(selection)
         index = selection[0]
         data = event.widget.get(index)
         
@@ -293,11 +288,10 @@ class Policy:
             elif each == "Description":
                 self.description.UpdateDescription(policyJson[each])
 
-# this function creates the window of the policy creator
 def PolicyCreator(my_policies):
     root = Tk()
     root.title("Policy Creator")
-    root.geometry("500x900")
+    root.geometry("600x900")
 
     rules = []
     objectLists = []
@@ -318,11 +312,6 @@ def PolicyCreator(my_policies):
 
     policy_description_frame = LabelFrame(frame, text="Policy Description")
     policy_description_frame.grid(row=3,column=0)
-
-    done_button_frame = Frame(frame)
-    done_button_frame.grid(row=4,column=0)
-
-    button_done = Button(done_button_frame, text="Done", background='#86C5D8', command= lambda: root.destroy(),padx=20).pack()
 
     ruleListbox = Listbox(policy_rules_frame,selectmode=SINGLE)
     ruleListbox.grid(row=0, column=2)
@@ -349,9 +338,16 @@ def PolicyCreator(my_policies):
     dictionary_entry.grid(row=1,column=0)
 
     description_entry = Text(policy_description_frame, width=50, height=5)
-    description_entry.grid(row=1,column=0)
-    add_description_button = Button(policy_description_frame, text="Add description...",command=lambda: description.UpdateDescription(description_entry.get("1.0",'end-1c')))
-    add_description_button.grid(row=0, column=0)
+    description_entry.grid(row=0,column=1)
+
+    another_frame2 = Frame(policy_description_frame)
+    another_frame2.grid(row=0, column=0, padx=30)
+    add_description_button = Button(another_frame2, text="Add description...",command=lambda: description.UpdateDescription(description_entry.get("1.0",'end-1c')))
+    add_description_button.grid(row=0, column=0)    
+
+    done_button_frame = Frame(frame)
+    done_button_frame.grid(row=4,column=0,pady=30)
+    button_done = Button(done_button_frame, text="Done", background='#86C5D8', command= lambda: root.destroy(),padx=20).pack()
 
     my_policy = Policy()
     my_policy.Populate(rules, objectLists, dictionaries, description)
@@ -461,214 +457,212 @@ def EvaluateFunctionView(event, currEvaluate, rule, objectLists, dictionaries):
 
     root.mainloop()  
 
-
-def ActivePolicyFrame(event):
-    event.widget.configure(background='#A1CEE5')
-    event.widget.bind("<Leave>", lambda  event :event.widget.configure(background='#FAFAFA'))
-
-def FillRuleListbox(listbox, rules):
-    for i in range(len(rules)):
-        listbox.insert(END, "Policy Rule: " + rules[i].id)
-
-def FillObjectListListbox(listbox, objectLists):
-    for i in range(len(objectLists)):
-        listbox.insert(END, objectLists[i].name)
-
-def FillDictionariesListbox(listbox, dictionaries):
-    for i in range(len(dictionaries)):
-        listbox.insert(END, dictionaries[i].name)
-
-#this is the policy view 
-def OpenPolicyView(event, policies, my_policies):
-    index = event.widget.curselection()[0]
-    policyJson = policies[index]
-    top = Toplevel()
-    top.title(policies[index]['Name'])
-    frame = Frame(top)
-    frame.pack()
-
-    policy = Policy()
-    policy.PopulateFromJson(policyJson)
-
-    policy_rules_frame = LabelFrame(frame, text= "Rules")
-    policy_rules_frame.grid(row=0,column=0)
-
-    policy_objectLists_frame = LabelFrame(frame, text= "Object Lists")
-    policy_objectLists_frame.grid(row=0,column=1)
-
-    policy_dictionaries_frame = LabelFrame(frame, text= "Dictionaries")
-    policy_dictionaries_frame.grid(row=1,column=0)
-
-    policy_description_frame = LabelFrame(frame, text= "Description")
-    policy_description_frame.grid(row=1,column=1)
-
-    rulesListbox = Listbox(policy_rules_frame,selectmode=SINGLE)
-    FillRuleListbox(rulesListbox, policy.rules)
-    rulesListbox.grid(row=0, column=0)
-    rulesListbox.bind("<<ListboxSelect>>", lambda event, arg=policy.rules, arg2=policy.objectLists, arg3=policy.dictionaries: Rule.OpenView(event, arg, arg2, arg3))
-
-    objectListsListbox = Listbox(policy_objectLists_frame,selectmode=SINGLE)
-    FillObjectListListbox(objectListsListbox, policy.objectLists)
-    objectListsListbox.grid(row=0, column=0)
-    objectListsListbox.bind("<<ListboxSelect>>", lambda event, arg=policy.objectLists, arg2=policy.dictionaries: ObjectList.OpenView(event, arg, arg2))
-
-    dictionariesListbox= Listbox(policy_dictionaries_frame,selectmode=SINGLE)
-    FillDictionariesListbox(dictionariesListbox, policy.dictionaries)
-    dictionariesListbox.grid(row=0, column=0)
-    dictionariesListbox.bind("<<ListboxSelect>>", lambda event, arg=policy.dictionaries, arg2=policy.objectLists: Dictionary.OpenView(event, arg, arg2))
-
-    description_view = Text(policy_description_frame)
-    description_view.insert(END, policy.description.description)
-    description_view.grid(row=0, column=0)
-    
-    def AddPolicy():
-        top.destroy()
-        event.widget.itemconfig(index, {'bg':'#90EF90'})
-        event.widget.selection_clear(index)
-        my_policies.append(policy)
-
-    def RemovePolicy(removeIndex):
-        top.destroy()
-        event.widget.itemconfig(index, {'bg':'white'})
-        event.widget.selection_clear(index)
-        my_policies.pop(removeIndex)
-
-    def FindPolicy():
-        global removeIndex 
-        for i in range(len(my_policies)):
-            if my_policies[i].name == policies[index]['Name']:
-                removeIndex = i
-                return True
-        return False
+#This class loads and renders the library the user to pick from. 
+class RenderLibrary:
+    def  __init__(self):
+        self.my_policies = []
+        library = json.load(open('library.json'))
+        self.loaded_policies = library["Policies"]
         
-    if not FindPolicy():
-        Button(frame, text= "Add Policy", background='#86C5D8',command= lambda: AddPolicy()).grid(row=2, columnspan=2)
-    else:
-        Button(frame, text= "Remove Policy", background='#FA6B84',command= lambda: RemovePolicy(removeIndex)).grid(row=2, columnspan=2)
+        root = Tk()
+        root.title("Policy Creator Library")
+        root.geometry("500x600")
+        frame = Frame(root)
+        frame.pack()
 
-    top.mainloop()
+        policies_frame = LabelFrame(frame, text="Policies",padx=40)
+        policies_frame.pack(side=LEFT)
 
+        self.switch_dev = False
+        
+        button_frame = Frame(frame, padx=40)
+        button_frame.pack(side=RIGHT,pady=40)
+        button_dev = Button(root, text="Dev Mode", command= lambda: self.Switch(button_dev))
+        button_dev.place(rely=.01, relx=.85)
+        button_done = Button(button_frame, text="Done", background='#86C5D8', command= lambda:  self.OpenPolicyCreator(root) if self.switch_dev else root.destroy(),padx=20)
+        button_done.pack(side=TOP, pady=150)
 
-#This function loads and renders the library the user to pick from. 
-def RenderLibrary(my_policies):
-    library = json.load(open('library.json'))
-    policies = library["Policies"]
-    
-    root = Tk()
+        if (not self.loaded_policies):
+            no_policy_msg = Message(policies_frame,text="No policies available.")
+            no_policy_msg.pack()
+            mainloop()
 
-    root.title("Policy Creator Library")
-    root.geometry("500x600")
-    frame = Frame(root)
-    frame.pack()
+        scrollbar = Scrollbar(policies_frame)
+        scrollbar.pack( side = RIGHT, fill = Y )
+        library_listbox = Listbox(policies_frame, height=30, activestyle='none',  yscrollcommand = scrollbar.set)
+        library_listbox.pack()
+        library_listbox.bind("<Double-Button-1>", lambda event: self.OpenPolicyView(event))
+        scrollbar.config( command = library_listbox.yview )
 
-    policies_frame = LabelFrame(frame, text="Policies",padx=40)
-    policies_frame.pack(side=LEFT)
+        for i in range(len(self.loaded_policies)):
+            library_listbox.insert(END, self.loaded_policies[i]["Name"])        
+            
+        mainloop()
 
-    global switch_dev
-    switch_dev = False
-    def Switch():
-        global switch_dev
-        switch_dev = not switch_dev
-        if switch_dev == False:
+    def OpenPolicyCreator(self,root):
+        root.destroy()
+        PolicyCreator(self.my_policies)
+
+    def Switch(self, button_dev):
+        self.switch_dev = not self.switch_dev
+        if self.switch_dev == False:
             button_dev.config(background='#f0f0f0')
         else:
             button_dev.config(background='#90EF90')
 
-    def OpenPolicyCreator():
-        root.destroy()
-        PolicyCreator(my_policies)
-        
-    button_frame = Frame(frame, padx=40)
-    button_frame.pack(side=RIGHT,pady=40)
-    button_dev = Button(root, text="Dev Mode", command= lambda: Switch())
-    button_dev.place(rely=.01, relx=.85)
-    button_done = Button(button_frame, text="Done", background='#86C5D8', command= lambda:  OpenPolicyCreator() if switch_dev else root.destroy(),padx=20)
-    button_done.pack(side=TOP, pady=150)
+    def OpenPolicyView(self, event):
+        index = event.widget.curselection()[0]
+        policyJson = self.loaded_policies[index]
+        top = Toplevel()
+        top.title(self.loaded_policies[index]['Name'])
+        frame = Frame(top)
+        frame.pack()
 
-    if (not policies):
-        no_policy_msg = Message(policies_frame,text="No policies available.")
-        no_policy_msg.pack()
+        policy = Policy()
+        policy.PopulateFromJson(policyJson)
+
+        policy_rules_frame = LabelFrame(frame, text= "Rules")
+        policy_rules_frame.grid(row=0,column=0)
+
+        policy_objectLists_frame = LabelFrame(frame, text= "Object Lists")
+        policy_objectLists_frame.grid(row=0,column=1)
+
+        policy_dictionaries_frame = LabelFrame(frame, text= "Dictionaries")
+        policy_dictionaries_frame.grid(row=1,column=0)
+
+        policy_description_frame = LabelFrame(frame, text= "Description")
+        policy_description_frame.grid(row=1,column=1)
+
+        rulesListbox = Listbox(policy_rules_frame,selectmode=SINGLE)
+        self.FillRuleListbox(rulesListbox, policy.rules)
+        rulesListbox.grid(row=0, column=0)
+        rulesListbox.bind("<<ListboxSelect>>", lambda event, arg=policy.rules, arg2=policy.objectLists, arg3=policy.dictionaries: Rule.OpenView(event, arg, arg2, arg3))
+
+        objectListsListbox = Listbox(policy_objectLists_frame,selectmode=SINGLE)
+        self.FillObjectListListbox(objectListsListbox, policy.objectLists)
+        objectListsListbox.grid(row=0, column=0)
+        objectListsListbox.bind("<<ListboxSelect>>", lambda event, arg=policy.objectLists, arg2=policy.dictionaries: ObjectList.OpenView(event, arg, arg2))
+
+        dictionariesListbox= Listbox(policy_dictionaries_frame,selectmode=SINGLE)
+        self.FillDictionariesListbox(dictionariesListbox, policy.dictionaries)
+        dictionariesListbox.grid(row=0, column=0)
+        dictionariesListbox.bind("<<ListboxSelect>>", lambda event, arg=policy.dictionaries, arg2=policy.objectLists: Dictionary.OpenView(event, arg, arg2))
+
+        description_view = Text(policy_description_frame)
+        description_view.insert(END, policy.description.description)
+        description_view.grid(row=0, column=0)
+        
+        def AddPolicy():
+            top.destroy()
+            event.widget.itemconfig(index, {'bg':'#90EF90'})
+            event.widget.selection_clear(index)
+            self.my_policies.append(policy)
+
+        def RemovePolicy(removeIndex):
+            top.destroy()
+            event.widget.itemconfig(index, {'bg':'white'})
+            event.widget.selection_clear(index)
+            self.my_policies.pop(removeIndex)
+
+            
+        if not self.FindPolicy(index):
+            Button(frame, text= "Add Policy", background='#86C5D8',command= lambda: AddPolicy()).grid(row=2, columnspan=2)
+        else:
+            Button(frame, text= "Remove Policy", background='#FA6B84',command= lambda: RemovePolicy(self.removeIndex)).grid(row=2, columnspan=2)
+
+        top.mainloop()  
+
+    def FindPolicy(self,index):
+            self.removeIndex 
+            for i in range(len(self.my_policies)):
+                if self.my_policies[i].name == self.policies[index]['Name']:
+                    self.removeIndex = i
+                    return True
+            return False
+    def FillRuleListbox(self, listbox, rules):
+        for i in range(len(rules)):
+            listbox.insert(END, "Policy Rule: " + rules[i].id)
+
+    def FillObjectListListbox(self,listbox, objectLists):
+        for i in range(len(objectLists)):
+            listbox.insert(END, objectLists[i].name)
+
+    def FillDictionariesListbox(self,listbox, dictionaries):
+        for i in range(len(dictionaries)):
+            listbox.insert(END, dictionaries[i].name)
+
+#this class asks whether to 'publish' their assembled policy and does so if it's valid
+class PolicyPublisher:  
+    def __init__(self):                    
+        root = Tk()
+        root.title("Publish Policy")
+        frame = Frame(root)
+        frame.place(in_=root, anchor="c", relx=.5, rely=.5)
+
+        root.geometry("650x300")
+        policy_message_frame = Message(frame,text="Do you want to publish your policy to the library?", width=400)
+        policy_message_frame.grid(row=0,columnspan=2)
+
+        my_policy_name = Entry(frame)
+        my_policy_name.grid(row=1,columnspan=2,pady=10)
+        button_no = Button(frame, text= "No", command= lambda: quit(),background='#FA6B84').grid(row=2, column=0,ipadx=40, padx=40)
+        button_yes = Button(frame, text= "Yes", command= lambda: self.AddPolicyIfValid(my_policy_name.get()),background='#90EF90').grid(row=2, column=1,ipadx=40)
         mainloop()
 
-    scrollbar = Scrollbar(policies_frame)
-    scrollbar.pack( side = RIGHT, fill = Y )
-    library_list = Listbox(policies_frame, height=30, activestyle='none',  yscrollcommand = scrollbar.set)
-    library_list.pack()
-    library_list.bind("<Double-Button-1>", lambda event, arg1=policies,  arg3=my_policies: OpenPolicyView(event, arg1, arg3))
-    scrollbar.config( command = library_list.yview )
+    #This function validates the given policy name. It cannot be an empty string
+    #and the name cannot already be present in the library
+    def AddPolicyIfValid(self,name):                          
+        top = Toplevel()
+        frame = Frame(top)
+        frame.place(in_=top, anchor="c", relx=.5, rely=.5)
+        top.geometry("650x300")
+        self.name = name
+        if self.name == "":
+            top.title("Name Not Valid")
+            policy_message_frame = Message(frame,text="Name cannot be blank. Please enter a name in the field provided.", width=400)
+            button_ok = Button(frame, text= "Ok", command= lambda: top.destroy(),background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
+        elif self.PolicyNameTaken():
+            top.title("Name Not Valid")
+            policy_message_frame = Message(frame,text="The name your provided is already present in the library. Please provide a unique name.", width=400)
+            button_ok = Button(frame, text= "Ok", command= lambda: top.destroy(),background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
+        else:
+            self.WritePolicyToLibrary('output.xml')
+            top.title("Succesfully Published " + name)
+            policy_message_frame = Message(frame,text="Your policy \"" + name + "\" has been successfully added to the library!", width=400)
+            button_ok = Button(frame, text= "Ok", command= lambda: quit(), background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
+            
 
-    for i in range(len(policies)):
-        library_list.insert(END, policies[i]["Name"])
+        policy_message_frame.grid(row=0,columnspan=2)
 
-        # policy_frame = Frame(policies_frame,width=2)
-        # print(policies[i]["Name"])                                               # this code may be useful for creating
-        # policy_name = Message(policy_frame,text=policies[i]["Name"])             # a more customizable library view
-        # policy_name.configure(background='#FAFAFA',width=40)
-        # policy_name.bind("<Enter>", lambda  event, arg=policy_name : ActivePolicyFrame(event, arg))
-        # policy_name.pack()
-        # policy_frame.grid(row=i,column=0)
-        
-    mainloop()
-    return switch_dev
+        top.mainloop()
 
-def AddArg(args, listbox, arg):
-    args.append(arg)
-    listbox.insert(END, arg)
+    #check if policy name to be added to the library is already present in the library
+    def PolicyNameTaken(self):
+        library = json.load(open('library.json','r'))
+        for each in library["Policies"]:
+            if each["Name"] == self.name:
+                return True
+        return False
+    
+    #this function parses the xml file of the user's newly created policy
+    #it creates a json object out of this policy to then write to the library.json
+    def WritePolicyToLibrary(self,policy_xml):
+        json_str = xmlparser(policy_xml, 'output.json')                        
+        library = json.load(open('library.json','r'))                   
 
+        policy_to_add = {"Name" : self.name}
+        policy_to_add.update({"PolicyRuleSet": json.loads(json_str)["PolicyRuleSet"]})
 
+        library["Policies"].append(policy_to_add)
+        json_string = json.dumps(library, indent=4)
 
-#this function displays the prompt to ask whether to 'publish' their assembled policy
-def PolicyAdderView():                      
-    root = Tk()
-    root.title("Publish Policy")
-    frame = Frame(root)
-    frame.place(in_=root, anchor="c", relx=.5, rely=.5)
+        out = open('library.json', "w", encoding='utf-8')
+        out.write(json_string)
+        out.close()
+        return 
 
-    root.geometry("650x300")
-    policy_message_frame = Message(frame,text="Do you want to publish your policy to the library?", width=400)
-    policy_message_frame.grid(row=0,columnspan=2)
-
-    my_policy_name = Entry(frame)
-    my_policy_name.grid(row=1,columnspan=2,pady=10)
-    button_no = Button(frame, text= "No", command= lambda: quit(),background='#FA6B84').grid(row=2, column=0,ipadx=40, padx=40)
-    button_yes = Button(frame, text= "Yes", command= lambda: AddPolicyIfValid(my_policy_name.get()),background='#90EF90').grid(row=2, column=1,ipadx=40)
-    mainloop()
-
-#This function checks validates the given policy name. It cannot be an empty string
-#and the name cannot already be present in the library
-def AddPolicyIfValid(name):                          
-    top = Toplevel()
-    frame = Frame(top)
-    frame.place(in_=top, anchor="c", relx=.5, rely=.5)
-    top.geometry("650x300")
-    if name == "":
-        top.title("Name Not Valid")
-        policy_message_frame = Message(frame,text="Name cannot be blank. Please enter a name in the field provided.", width=400)
-        button_ok = Button(frame, text= "Ok", command= lambda: top.destroy(),background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
-    elif PolicyNameTaken(name):
-        top.title("Name Not Valid")
-        policy_message_frame = Message(frame,text="The name your provided is already present in the library. Please provide a unique name.", width=400)
-        button_ok = Button(frame, text= "Ok", command= lambda: top.destroy(),background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
-    else:
-        WritePolicyToLibrary('output.xml', name)
-        top.title("Succesfully Published " + name)
-        policy_message_frame = Message(frame,text="Your policy \"" + name + "\" has been successfully added to the library!", width=400)
-        button_ok = Button(frame, text= "Ok", command= lambda: quit(), background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
-
-    policy_message_frame.grid(row=0,columnspan=2)
-
-    top.mainloop()
-
-#check if policy name to be added to the library is already present in the library
-def PolicyNameTaken(name):
-    library = json.load(open('library.json','r'))
-    for each in library["Policies"]:
-        if each["Name"] == name:
-            return True
-    return False
-
+#this class displays the user with the option to add a new compute/evaluate function. It tests the submitted code and function name.
 class FunctionCreator():
-
     def __init__(self):
 
         # json_str = xmlparser(policy_xml, 'output.json')      
@@ -713,7 +707,6 @@ class FunctionCreator():
         self.name = name
         self.func_code = code
         self.func_type = func_type
-        print(func_type)
         if self.ValidCode():
             if not self.FunctionNameTaken():
                 self.WriteFunction()
@@ -753,7 +746,7 @@ class FunctionCreator():
 
     def WriteFunction(self):
             
-       
+    
 
         path1 = "user_functions/" + self.func_type.lower() + "_functions.py"
         path2 = "user_functions/check_function.py"
@@ -788,23 +781,6 @@ class FunctionCreator():
             if self.name in dir(evaluate_functions):
                 return True
         return False
-
-#this function parses the xml file of the user's newly created policy
-#it creates a json object out of this policy to then write to the library.json
-def WritePolicyToLibrary(policy_xml, name):
-    json_str = xmlparser(policy_xml, 'output.json')                        
-    library = json.load(open('library.json','r'))                   
-
-    policy_to_add = {"Name" : name}
-    policy_to_add.update({"PolicyRuleSet": json.loads(json_str)["PolicyRuleSet"]})
-
-    library["Policies"].append(policy_to_add)
-    json_string = json.dumps(library, indent=4)
-
-    out = open('library.json', "w", encoding='utf-8')
-    out.write(json_string)
-    out.close()
-    return 
 
 #this function assembles the xml tree using the policy attributes collected
 # at the end the function also writes this tree to 'output.xml'
@@ -843,23 +819,27 @@ def CreateXMLFile(rules, objectLists, dictionaries, description):
         ET.indent(tree) 
         tree.write(file,xml_declaration=True,encoding='utf-8')
    
-
 def UserMode():
-    # print('assetCriticality' in dir(functions_))
     my_policies = [] 
-    devMode = RenderLibrary(my_policies)        #RenderLibrary returns a boolean that indicates whether the user picked DevMode
-    print(my_policies)
+
+    #RenderLibrary has a boolean field that indicates if user picked DevMode
+    #It also has a field of picked policies to be enxtended onto our my_policies array
+    pickedPolicies = RenderLibrary() 
+    devMode = pickedPolicies.switch_dev
+    my_policies.extend(pickedPolicies.my_policies)
+
     FunctionCreator() if devMode else None
 
-    
     my_rules = []
     my_objectLists = []
     my_dictionaries = []
 
+    #when creating my_policies, we overwrite the rule id's to be sequentially increasing,
+    #regardless of their original id's in their respective Policies.
     ruleNum = 1
     for i in range(len(my_policies)):
-        for k in range(len(my_policies[i].rules)):      #when creating my_policies, we overwrite the rule id's to be sequentially increasing, 
-            my_policies[i].rules[k].id = str(ruleNum)    #regardless of their original id's in their respective Policies.
+        for k in range(len(my_policies[i].rules)):       
+            my_policies[i].rules[k].id = str(ruleNum)    
             my_rules.append(my_policies[i].rules[k])
             ruleNum = ruleNum + 1
         my_objectLists.extend(my_policies[i].objectLists)
@@ -869,6 +849,5 @@ def UserMode():
     #the description of the last policy that makes up my_policies
     my_description = my_policies[len(my_policies) - 1].description if my_policies else Description("")  
 
-    # CheckFunctions(my_objectLists, my_dictionaries) if devMode else None                                                       
     CreateXMLFile(my_rules, my_objectLists, my_dictionaries, my_description)
-    PolicyAdderView() if devMode else None  
+    PolicyPublisher() if devMode else None  
