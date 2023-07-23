@@ -1,50 +1,322 @@
-{ "Policies" : 
-    [
+{
+    "EvaluateFunctions": [
         {
-        "Name": "David's Policy",
-        "PolicyRuleSet": {
-            "@dtdVersion": "0.1",
-            "PolicyRule": {
-                "@name": "1",
-                "@quantifier": "exists",
-                "@evaluate": "dwadawd",
-                "Description": "wadawdwa"
-            },
-            "ObjectList": {
-                "@name": "pingalinwadaw",
-                "@imported": "True",
-                "@compute": "dwadwadwadwa"
-            },
-            "Dictionary": {
-                "@name": "dwafor adkan1",
-                "@imported": "True",
-                "@compute": "dawdawdwadawd"
-            },
-            "Description": "dwadwadwadawdaw"
+            "Name": "ddattbdb"
+        },
+        {
+            "Name": "hiiiiTest"
+        },
+        {
+            "Name": "wholeNewTest"
+        },
+        {
+            "Name": "dadda"
+        },
+        {
+            "Name": "hyunnda"
+        },
+        {
+            "Name": "dada"
+        },
+        {
+            "Name": "WOOO"
+        },
+        {
+            "Name": "newTest"
+        },
+        {
+            "Name": "newTest(funcArgs):"
+        },
+        {
+            "Name": "newTest(fun"
+        },
+        {
+            "Name": [
+                "newTest",
+                "funcArgs):"
+            ]
+        },
+        {
+            "Name": "thisTest"
+        },
+        {
+            "Name": "thisTestingFunc3"
+        },
+        {
+            "Name": "thisTestingFunc4"
+        }
+    ],
+    "ComputeFunctions": [
+        {
+            "Name": "hiuLlow"
+        },
+        {
+            "Name": "newTest"
+        },
+        {
+            "Name": "newTest1"
+        },
+        {
+            "Name": "thisTestingFunc4"
+        }
+    ],
+    "Policies": [
+        {
+            "Name": "David's Policy",
+            "PolicyRuleSet": {
+                "dtdVersion": "0.1",
+                "PolicyRule": {
+                    "name": "1",
+                    "quantifier": "exists",
+                    "evaluate": "dwadawd",
+                    "Description": "wadawdwa"
+                },
+                "ObjectList": {
+                    "name": "pingalinwadaw",
+                    "imported": "True",
+                    "compute": "dwadwadwadwa"
+                },
+                "Dictionary": {
+                    "name": "dwafor adkan1",
+                    "imported": "True",
+                    "compute": "dawdawdwadawd"
+                },
+                "Description": "dwadwadwadawdaw"
             }
         },
         {
             "Name": "Diego's Policy",
             "PolicyRuleSet": {
-                "@dtdVersion": "0.1",
+                "dtdVersion": "0.1",
                 "PolicyRule": {
-                    "@name": "2",
-                    "@quantifier": "exists",
-                    "@evaluate": "dwadawd",
+                    "name": "2",
+                    "quantifier": "exists",
+                    "evaluate": "dwadawd",
                     "Description": "w222"
                 },
                 "ObjectList": {
-                    "@name": "dwadwadaw",
-                    "@imported": "True",
-                    "@compute": "dw12241241wa"
+                    "name": "dwadwadaw",
+                    "imported": "True",
+                    "compute": "dw12241241wa"
                 },
                 "Dictionary": {
-                    "@name": "dwad12121",
-                    "@imported": "False",
-                    "@compute": "dawdawdwadawd"
+                    "name": "dwad12121",
+                    "imported": "False",
+                    "compute": "dawdawdwadawd"
                 },
                 "Description": "dwadwadwadawdaw"
+            }
+        },
+        {
+            "Name": "Test policy",
+            "PolicyRuleSet": {
+                "dtdVersion": "0.1",
+                "PolicyRule": [
+                    {
+                        "name": "1",
+                        "quantifier": "exists",
+                        "evaluate": "sdasda",
+                        "Description": "da"
+                    },
+                    {
+                        "name": "2",
+                        "quantifier": "",
+                        "evaluate": ""
+                    }
+                ],
+                "ObjectList": {
+                    "name": "dawdwadaw",
+                    "imported": "True",
+                    "compute": "dwadwadwa"
+                },
+                "Dictionary": {
+                    "name": "ddddddd",
+                    "imported": "True",
+                    "compute": "adajdankd"
+                },
+                "Description": "hello testing"
+            }
+        },
+        {
+            "Name": "new policy that test",
+            "PolicyRuleSet": {
+                "dtdVersion": "0.1",
+                "PolicyRule": [
+                    {
+                        "name": "1",
+                        "quantifier": "exists",
+                        "evaluate": "dwadawd",
+                        "Description": "w222"
+                    },
+                    {
+                        "name": "2",
+                        "quantifier": "",
+                        "evaluate": ""
+                    },
+                    {
+                        "name": "3",
+                        "quantifier": "not_forall",
+                        "evaluate": "hello",
+                        "Description": "hi"
+                    },
+                    {
+                        "name": "4",
+                        "quantifier": "",
+                        "evaluate": ""
+                    }
+                ],
+                "ObjectList": [
+                    {
+                        "name": "dwadwadaw",
+                        "imported": "True",
+                        "compute": "dw12241241wa"
+                    },
+                    {
+                        "name": "dwadgg12",
+                        "imported": "True",
+                        "compute": ""
+                    }
+                ],
+                "Dictionary": [
+                    {
+                        "name": "dwad12121",
+                        "imported": "False",
+                        "compute": "dawdawdwadawd"
+                    },
+                    {
+                        "name": "dadawd",
+                        "imported": "True",
+                        "compute": ""
+                    }
+                ],
+                "Description": "523423"
+            }
+        },
+        {
+            "Name": "new test",
+            "PolicyRuleSet": {
+                "dtdVersion": "0.1",
+                "PolicyRule": {
+                    "name": "1",
+                    "quantifier": "for_all",
+                    "evaluate": "assetCriticality(@net)"
+                },
+                "ObjectList": {
+                    "name": "devices",
+                    "imported": "True",
+                    "compute": ""
+                },
+                "Dictionary": {
+                    "name": "net",
+                    "imported": "True",
+                    "compute": ""
                 }
-            }     
+            }
+        },
+        {
+            "Name": "sure",
+            "PolicyRuleSet": {
+                "dtdVersion": "0.1",
+                "PolicyRule": {
+                    "name": "1",
+                    "quantifier": "for_all",
+                    "evaluate": "assetCriticality(@devices)"
+                },
+                "ObjectList": {
+                    "name": "hi",
+                    "imported": "True",
+                    "compute": ""
+                },
+                "Dictionary": {
+                    "name": "devices",
+                    "imported": "True",
+                    "compute": ""
+                }
+            }
+        },
+        {
+            "Name": "newest test",
+            "PolicyRuleSet": {
+                "dtdVersion": "0.1",
+                "PolicyRule": [
+                    {
+                        "name": "1",
+                        "quantifier": "for_all",
+                        "evaluate": "assetCriticality(@firewalls,@switches,@nodes,@devices,@networks)",
+                        "Description": "This should check blah blah"
+                    },
+                    {
+                        "name": "2",
+                        "quantifier": "not_forall",
+                        "evaluate": "test function(firewalls,switches,nodes)",
+                        "Description": "another test but we dont use for_all"
+                    },
+                    {
+                        "name": "3",
+                        "quantifier": "not_forall",
+                        "evaluate": "actual(@networks)"
+                    }
+                ],
+                "ObjectList": [
+                    {
+                        "name": "networks",
+                        "imported": "True",
+                        "compute": ""
+                    },
+                    {
+                        "name": "devices",
+                        "imported": "True",
+                        "compute": ""
+                    }
+                ],
+                "Dictionary": [
+                    {
+                        "name": "nodes",
+                        "imported": "True",
+                        "compute": ""
+                    },
+                    {
+                        "name": "switches",
+                        "imported": "True",
+                        "compute": ""
+                    },
+                    {
+                        "name": "firewalls",
+                        "imported": "True",
+                        "compute": ""
+                    }
+                ]
+            }
+        },
+        {
+            "Name": "new policy test",
+            "PolicyRuleSet": {
+                "dtdVersion": "0.1",
+                "PolicyRule": [
+                    {
+                        "name": "1",
+                        "quantifier": "for_all",
+                        "evaluate": "assetCriticality(@networks,@devices)"
+                    },
+                    {
+                        "name": "2",
+                        "quantifier": "not_forall",
+                        "evaluate": "actual(networks)",
+                        "Description": "testing rule 2"
+                    }
+                ],
+                "ObjectList": {
+                    "name": "devices",
+                    "imported": "False",
+                    "compute": "testcomputes(devices)"
+                },
+                "Dictionary": {
+                    "name": "networks",
+                    "imported": "True",
+                    "compute": "assetCriticalityNew(networks,devices)"
+                },
+                "Description": "This is the latest test"
+            }
+        }
     ]
 }

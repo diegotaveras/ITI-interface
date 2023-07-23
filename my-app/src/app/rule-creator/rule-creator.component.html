@@ -1,0 +1,14 @@
+<div class="container">
+    <button class="addRule-button" (click)="AddRule()"> Add Rule...</button>
+
+    <ul text-align:center>
+        <li class="rule-list" *ngFor="let rule of rules" (contextmenu)=DeleteOption($event,rule.id);false>
+            <p> Policy Rule {{rule.id}}</p>
+            <div [ngStyle]="getRightClickMenuStyle()" class="delete-menu" *ngIf="showDeleteOption && rule.id == selectedRuleId ">
+                <p>Delete</p>
+            </div>
+
+           
+        </li>
+    </ul>
+</div>

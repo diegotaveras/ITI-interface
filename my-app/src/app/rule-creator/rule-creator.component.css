@@ -1,0 +1,22 @@
+.container {
+    background-color: beige;
+    
+    width:100%;
+    text-align: center;
+    /* padding: 10%; */
+}
+
+.delete-menu {
+    background-color: bisque;
+    width: 7%;
+}
+.rule-list {
+    list-style: none;
+    text-align: center;
+   
+}
+.addRule-button {
+    background-color: aquamarine;
+    border:none;
+    border-radius:10px;
+}

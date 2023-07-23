@@ -1,5 +1,29 @@
 {
     "PolicyRuleSet": {
-        "@dtdVersion": "0.1"
+        "dtdVersion": "0.1",
+        "PolicyRule": [
+            {
+                "name": "1",
+                "quantifier": "for_all",
+                "evaluate": "assetCriticality(@networks,@devices)"
+            },
+            {
+                "name": "2",
+                "quantifier": "not_forall",
+                "evaluate": "actual(networks)",
+                "Description": "testing rule 2"
+            }
+        ],
+        "ObjectList": {
+            "name": "devices",
+            "imported": "False",
+            "compute": "testcomputes(devices)"
+        },
+        "Dictionary": {
+            "name": "networks",
+            "imported": "True",
+            "compute": "assetCriticalityNew(networks,devices)"
+        },
+        "Description": "This is the latest test"
     }
 }

@@ -1,7 +1,7 @@
 from __future__ import print_function, unicode_literals
 import xml.etree.ElementTree as ET
 from PyInquirer import prompt,Separator, Token, style_from_dict
-from user_mode import Rule, ObjectList, Dictionary, Description, CreateXMLFile
+from user_mode import Rule, ObjectList, Dictionary, Description, CreateXMLTree
 
 def askStandards():
     askStandards = [
@@ -232,4 +232,4 @@ def DevMode():
     if (wantDescription['addCustom']):
         description = askDescription()
 
-    CreateXMLFile(rules, objectLists, dictionaries, description)
+    CreateXMLTree(rules, objectLists, dictionaries, description)

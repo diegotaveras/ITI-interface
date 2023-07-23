@@ -1,0 +1,11 @@
+.obj-list-box {
+    /* margin:10%; */
+    border-color: red;
+
+    /* background-color: aqua; */
+    padding: 10%;
+    border-width:1px;
+    border-style: solid;
+    /* border-radius: 5%; */
+    
+}
