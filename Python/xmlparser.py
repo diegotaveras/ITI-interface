@@ -11,8 +11,8 @@ def xmlparser(in_xml, out_json):
     out = open(out_json, "w")
     out.write(json_string)
     out.close()
-    print("The given .xml file given in .json format: output.json")
-
+    print("The given .xml file given in .json format: " + out_json)
+    print(json_string)
     return json_string
     
     

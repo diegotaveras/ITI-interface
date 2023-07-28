@@ -1,15 +1,15 @@
 from tkinter import *
-
+from tkinter import filedialog
 import xml.etree.ElementTree as ET
 import inspect
 import json
 from xmlparser import xmlparser
 import subprocess
 import os
-from networkx import DiGraph, topological_sort, simple_cycles
+from networkx import DiGraph, topological_sort, simple_cycles, selfloop_edges
 from policy_parse import *
 from user_functions import evaluate_functions, compute_functions
-import copy
+import sys
 
 class Description:
     def __init__(self, desc):
@@ -47,14 +47,14 @@ class Rule:
         top = Toplevel()
         top.title(data)
 
-        top.geometry("400x500")
+        top.geometry("600x350")
         frame = Frame(top)
         frame.pack()
         policy_id_frame = Label(frame, text="Rule " + str(rules[index].id))
-        policy_id_frame.grid(row=0,column=0)
+        policy_id_frame.grid(row=1,column=0)
 
         policy_quantifier_frame = LabelFrame(frame, text="Quantifier")
-        policy_quantifier_frame.grid(row=0,column=1)
+        policy_quantifier_frame.grid(row=1,column=1, padx=20)
 
         quantifier_options = {1:'for_all', 2: 'not_forall', 3:'exists', 4:'not_exists'}
         quantifier_to_options = { value:str(key) for key, value in quantifier_options.items()}
@@ -76,29 +76,34 @@ class Rule:
         evaluate.pack()
 
         policy_description_frame = LabelFrame(frame, text="Description")
-        policy_description_frame.grid(row=2,column=2)
+        policy_description_frame.grid(row=2,column=0, columnspan=4)
 
         description = Entry(policy_description_frame)
         description.pack()
 
-        library = json.load(open('library.json'))
-        evaluateFunctions = library["EvaluateFunctions"]
+        evaluateFunctions = getEvaluateFunctions()
 
         for i in range(len(evaluateFunctions)):                
-            evaluate.insert(END, evaluateFunctions[i]["Name"] + "()")
+            evaluate.insert(END, evaluateFunctions[i] + "()")
 
-        
+        eval_args = LabelFrame(frame,text="Function arguments")
+        eval_args.grid(row=1,column=3,padx=20)  
+
+        args_listbox = Listbox(eval_args, selectmode=MULTIPLE, activestyle='none')    
+        args_listbox.grid(row=0,column=1) 
         currEvaluate = Label(frame, text= "Current evaluate: " + rules[index].evaluate)
-        currEvaluate.grid(row=0, column=2, columnspan=3)
-        evaluate.bind("<Double-Button-1>" , lambda event: EvaluateFunctionView(event, currEvaluate, rules[index], objectLists, dictionaries))
+        currEvaluate.grid(row=0, column=2, columnspan=3, pady=20)
+        evaluate.bind("<<ListboxSelect>>" , lambda event: EvaluateFunctionView(event, currEvaluate, rules[index], objectLists, dictionaries, args_listbox))
         
         description.insert(INSERT, rules[index].description)
+
+       
 
         def BuildRule():
             rules[index].setFields(quantifier_options[v.get()], rules[index].evaluate, Description(description.get()))
             top.destroy()
 
-        Button(frame, text= "Build rule", background='#86C5D8', command= lambda: BuildRule()).grid(row=3,columnspan=3,pady=10)
+        Button(frame, text= "Build rule", background='#86C5D8', command= lambda: BuildRule()).grid(row=3,columnspan=4,pady=10)
 
         top.mainloop()
 
@@ -123,50 +128,56 @@ class ObjectList:
         entry.delete(0,END)
 
     @staticmethod
-    def OpenView(event,objectLists, dictionaries):
+    def OpenView(event,dictionaries, objectLists):
         selection = event.widget.curselection()
         index = selection[0]
         data = event.widget.get(index)
-
+        
         top = Toplevel()
         top.title(data)
         frame = Frame(top)
         frame.pack()
+
         objList_name_frame = Label(frame, text="Object List: " + str(objectLists[index].name))
         objList_name_frame.grid(row=0,column=0)
-
         objList_imported_frame = LabelFrame(frame, text="Imported")
         objList_imported_frame.grid(row=0,column=1)
 
         v = BooleanVar(value=objectLists[index].imported)
-        
+
         imported = Checkbutton(objList_imported_frame, variable=v, text='Imported')
         imported.pack(anchor=W)
-
+      
         objList_compute_frame = LabelFrame(frame, text="Compute")
         objList_compute_frame.grid(row=1,column=2)
 
-        library = json.load(open('library.json'))
-        computeFunctions = library["ComputeFunctions"]
-        
+
+        computeFunctions = getComputeFunctions()
+
         compute = Listbox(objList_compute_frame)
         compute.pack()
 
         for i in range(len(computeFunctions)):                
-            compute.insert(END, computeFunctions[i]["Name"] + "()")
+            compute.insert(END, computeFunctions[i] + "()")
 
+        compute_args = LabelFrame(frame,text="Function arguments")
+        compute_args.grid(row=1,column=3,padx=20)  
 
-        currCompute = Label(frame, text= "Current compute: " + objectLists[index].compute)
+        args_listbox = Listbox(compute_args, selectmode=MULTIPLE, activestyle='none')    
+        args_listbox.grid(row=1,column=1) 
+        currCompute = Label(frame, text= "Current compute: " + objectLists[index].compute, justify=CENTER)
         currCompute.grid(row=0, column=2, columnspan=3)
-        compute.bind("<Double-Button-1>" , lambda event: ComputeFunctionView(event, currCompute, objectLists[index], objectLists, dictionaries))
-        
+        compute.bind("<<ListboxSelect>>" , lambda event: ComputeFunctionView(event, currCompute, objectLists[index], objectLists, dictionaries, args_listbox))
+
         def BuildObjList():
             objectLists[index].setFields(v.get(), objectLists[index].compute)
             top.destroy()
-        
-        Button(frame, text= "Build Object List", background='#86C5D8', command= lambda: BuildObjList()).grid(row=2,columnspan=3,pady=10)
-        
+
+        Button(frame, text= "Build Object List", background='#86C5D8', command= lambda: BuildObjList()).grid(row=2,columnspan=4,pady=10)
+
         top.mainloop()
+
+
 
 class Dictionary:
     def __init__(self, name):
@@ -212,25 +223,29 @@ class Dictionary:
         dictionary_compute_frame = LabelFrame(frame, text="Compute")
         dictionary_compute_frame.grid(row=1,column=2)
 
-        library = json.load(open('library.json'))
-        computeFunctions = library["ComputeFunctions"]
-        
+
+        computeFunctions = getComputeFunctions()
+
         compute = Listbox(dictionary_compute_frame)
         compute.pack()
 
         for i in range(len(computeFunctions)):                
-            compute.insert(END, computeFunctions[i]["Name"] + "()")
+            compute.insert(END, computeFunctions[i] + "()")
 
+        compute_args = LabelFrame(frame,text="Function arguments")
+        compute_args.grid(row=1,column=3,padx=20)  
 
-        currCompute = Label(frame, text= "Current compute: " + dictionaries[index].compute)
+        args_listbox = Listbox(compute_args, selectmode=MULTIPLE, activestyle='none')    
+        args_listbox.grid(row=1,column=1) 
+        currCompute = Label(frame, text= "Current compute: " + dictionaries[index].compute, justify=CENTER)
         currCompute.grid(row=0, column=2, columnspan=3)
-        compute.bind("<Double-Button-1>" , lambda event: ComputeFunctionView(event, currCompute, dictionaries[index], objectLists, dictionaries))
+        compute.bind("<<ListboxSelect>>" , lambda event: ComputeFunctionView(event, currCompute, dictionaries[index], objectLists, dictionaries, args_listbox))
 
         def BuildDict():
             dictionaries[index].setFields(v.get(), dictionaries[index].compute)
             top.destroy()
 
-        Button(frame, text= "Build Dictionary", background='#86C5D8', command= lambda: BuildDict()).grid(row=2,columnspan=3,pady=10)
+        Button(frame, text= "Build Dictionary", background='#86C5D8', command= lambda: BuildDict()).grid(row=2,columnspan=4,pady=10)
 
         top.mainloop()
 
@@ -294,8 +309,7 @@ class PolicyCreator:
 
         self.policy = Policy()
         
-        self.data_object_dict = {}
-
+    
     def EditPolicy(self):
         self.clicked_objList = False
         self.clicked_dictionary = False
@@ -332,20 +346,18 @@ class PolicyCreator:
         add_rule_button.grid(row=0, column=0)
         ruleListbox.bind("<<ListboxSelect>>", lambda event, arg=rules, arg2=objectLists, arg3=dictionaries: Rule.OpenView(event, arg, arg2, arg3))
 
-
+        
         objectListListbox = Listbox(policy_objectLists_frame,selectmode=SINGLE)
         objectListListbox.grid(row=0, column=2)
         self.FillItemListbox(objectListListbox,objectLists)
         add_objectList_button = Button(policy_objectLists_frame, text="Add object list...",command=lambda: ObjectList.AddItem(objectListListbox, objectLists, objList_entry) if self.clicked_objList else None)
         add_objectList_button.grid(row=0, column=0)
-        objectListListbox.bind("<<ListboxSelect>>", lambda event, arg=objectLists, arg2=dictionaries: ObjectList.OpenView(event, arg, arg2))
+        objectListListbox.bind("<<ListboxSelect>>", lambda event, arg=dictionaries, arg2=objectLists: ObjectList.OpenView(event, arg, arg2))
         objList_entry = Entry(policy_objectLists_frame,fg="#D3D3D3")
         objList_entry.insert(0, "Enter a name")
         objList_entry.bind("<Button-1>", lambda event: self.ClickEntry(event, "clicked_objList"))
         
         objList_entry.grid(row=1,column=0)
-
-        
 
         dictionaryListbox = Listbox(policy_dictionaries_frame,selectmode=SINGLE)
         dictionaryListbox.grid(row=0, column=2)
@@ -369,13 +381,13 @@ class PolicyCreator:
 
         done_button_frame = Frame(frame)
         done_button_frame.grid(row=4,column=0,pady=30)
+       
         button_done = Button(done_button_frame, text="Done", background='#86C5D8', command= lambda: root.destroy(),padx=20).pack()
-
+      
+            
         self.policy.Populate(rules, objectLists, dictionaries, description)
+        
         mainloop()
-
-
-    
 
     def ClickEntry(self,event, clicked):
             event.widget.config(fg = "black")
@@ -383,7 +395,6 @@ class PolicyCreator:
             event.widget.unbind("<Button-1>")
             value = getattr(self, clicked)
             setattr(self, clicked, not value)
-
 
     def FillRuleListbox(self, listbox, rules):
         for i in range(len(rules)):
@@ -396,15 +407,24 @@ class PolicyCreator:
         
 
 def CycleDetect(dictionaries, obj_lists):
+    name_graph = DiGraph()
+    global data_object_dict
     data_object_dict = {}
-    getFuncDict(obj_lists, dictionaries)
+    dictionaries = [d for d in dictionaries if d.compute != ""]
+    obj_lists = [obj for obj in obj_lists if obj.compute != ""]
+    
+    
+    #no rules used for this call so pass in empty arr
+    getFuncDict(obj_lists, dictionaries, [])    
     # get names of dictionaries and ObjectLists
     for d in dictionaries:
+        
         name = d.name
         imported = d.imported
         compute  = d.compute
         data_object = DataObject(name, imported, 'dict', compute)
         data_object_dict[ name ] = data_object
+        # if not name_graph.has_node(name):
         name_graph.add_node( name )
 
     for obj in obj_lists:
@@ -413,6 +433,7 @@ def CycleDetect(dictionaries, obj_lists):
         compute  = obj.compute
         data_object = DataObject(name, imported, 'list', compute)
         data_object_dict[ name ] = data_object
+        # if not name_graph.has_node(name):
         name_graph.add_node( name )
 
     # visit each object_list or dict that is not imported and
@@ -433,63 +454,85 @@ def CycleDetect(dictionaries, obj_lists):
 
             if arg not in data_object_dict:
                 print('undefined function argument',arg)
-                exit(1)
+                # exit(1)
+                name_graph.add_edge(name, name)
+                continue
             name_graph.add_edge(arg,name)
+
 
     # check for circular dependencies
     cg = simple_cycles( name_graph )
     cycles = []
+    # cycles = [cycle for cycle in cg if len(cycle) > 1]
+    
     for cycle in cg:
-        cycles.append(repr(cycle))
-        print('cycle detected in object_set graph', repr(cycle))
+        if len(cycle) > 1:
+            cycles.append(repr(cycle))
+            print('cycle detected in object_set graph', repr(cycle))
         # exit(1)
 
     return len(cycles) != 0
 
-def ComputeFunctionView(event, currCompute, object, objectLists, dictionaries):
-    index = event.widget.curselection()[0]
-    data = event.widget.get(index)
+def getComputeFunctions():
+    arr = []
+    for each in dir(compute_functions):
+        if (each[:2] != "__"):
+            arr.append(each)
+    
+    return arr
 
-    root = Toplevel()
-    root.title(data)
-    # root.geometry("500x900")
-    frame = Frame(root)
-    frame.pack()                
-  
-    eval_args = LabelFrame(frame,text="Function arguments")
-    eval_args.grid(row=0,column=1,padx=20)  
+def getEvaluateFunctions():
+    arr = []
+    for each in dir(evaluate_functions):
+        if (each[:2] != "__"):
+            arr.append(each)
+    
+    return arr
 
-    args_listbox = Listbox(eval_args, selectmode=MULTIPLE, activestyle='none')    
-    args_listbox.grid(row=0,column=1) 
 
+
+def FillArgsListbox(data, object, args_listbox, objectLists, dictionaries):
     for i in range(len(objectLists)):
-        copy = ObjectList(objectLists[i].name) 
+        copy = ObjectList(object.name) 
         copy.compute = data[:-2] + "(" + objectLists[i].name + ")"
-        copy.imported = objectLists[i].imported
+        copy.imported = object.imported
+        
         print(copy.imported)
-        if objectLists[i].name != object.name and (objectLists[i].imported or objectLists[i].compute != "" or not CycleDetect(dictionaries.copy(), objectLists.copy() + [copy])):
+        if objectLists[i].name != object.name and (objectLists[i].imported or (objectLists[i].compute != "" and not CycleDetect(dictionaries.copy(), objectLists.copy() + [copy]))):
             args_listbox.insert(END, objectLists[i].name)
     for i in range(len(dictionaries)):
-        copy = Dictionary(dictionaries[i].name) 
+        copy = Dictionary(object.name) 
         copy.compute = data[:-2] + "(" + dictionaries[i].name + ")"
-        copy.imported = dictionaries[i].imported
+        copy.imported = object.imported
 
         print(dictionaries[i].imported)
-        if dictionaries[i].name != object.name and (dictionaries[i].imported or dictionaries[i].compute != "" or not CycleDetect(dictionaries.copy() + [copy], objectLists.copy()) ):
+        if dictionaries[i].name != object.name and (dictionaries[i].imported or (dictionaries[i].compute != "" and not CycleDetect(dictionaries.copy() + [copy], objectLists.copy()) )):
             args_listbox.insert(END, dictionaries[i].name)
+
+
+def ComputeFunctionView(event, currCompute, object, objectLists, dictionaries, args_listbox):
+    index = event.widget.curselection()[0]
+    data = event.widget.get(index)
+    
+    args_listbox.delete(0,END)
+    
+    FillArgsListbox(data, object, args_listbox, objectLists, dictionaries)
 
     arguments = []
 
     def AddArg(event, arguments):
+        
         idx = event.widget.curselection()[0]
         if event.widget.get(idx) not in arguments:
             event.widget.itemconfig(idx, {'bg':'#90EF90'})
             arguments.append(event.widget.get(idx))
         print(arguments)
+        UpdateComputeFunction(data)
 
     args_listbox.bind("<<ListboxSelect>>",  lambda event: AddArg(event, arguments))
 
     def UpdateComputeFunction(data):
+        
         data = data[:-2]
         signature = data + "("
         # if rule.quantifier == "for_all":
@@ -502,28 +545,14 @@ def ComputeFunctionView(event, currCompute, object, objectLists, dictionaries):
         signature = signature + arguments[-1] + ")"
         object.compute = signature
         currCompute.config(text="Current compute: " + object.compute)
-        root.destroy()
+        
 
-    button_done = Button(frame, text="Done", background='#86C5D8', command= lambda: UpdateComputeFunction(data), padx=20)
-    button_done.grid(row=1,columnspan=2,pady=20)
 
-    root.mainloop()  
-
-def EvaluateFunctionView(event, currEvaluate, rule, objectLists, dictionaries):
+def EvaluateFunctionView(event, currEvaluate, rule, objectLists, dictionaries, args_listbox):
     index = event.widget.curselection()[0]
     data = event.widget.get(index)
 
-    root = Toplevel()
-    root.title(data)
-    # root.geometry("500x900")
-    frame = Frame(root)
-    frame.pack()                
-  
-    eval_args = LabelFrame(frame,text="Function arguments")
-    eval_args.grid(row=0,column=1,padx=20)  
-
-    args_listbox = Listbox(eval_args, selectmode=MULTIPLE, activestyle='none')    
-    args_listbox.grid(row=0,column=1) 
+    args_listbox.delete(0,END)
 
     for i in range(len(objectLists)):
         args_listbox.insert(END, objectLists[i].name)
@@ -538,6 +567,7 @@ def EvaluateFunctionView(event, currEvaluate, rule, objectLists, dictionaries):
             event.widget.itemconfig(idx, {'bg':'#90EF90'})
             arguments.append(event.widget.get(idx))
         print(arguments)
+        UpdateEvaluateFunction(data)
     args_listbox.bind("<<ListboxSelect>>",  lambda event: AddArg(event, arguments))
 
     def UpdateEvaluateFunction(data):
@@ -553,12 +583,7 @@ def EvaluateFunctionView(event, currEvaluate, rule, objectLists, dictionaries):
             signature = signature + arguments[-1] + ")"
         rule.evaluate = signature
         currEvaluate.config(text="Current evaluate: " + rule.evaluate)
-        root.destroy()
 
-    button_done = Button(frame, text="Done", background='#86C5D8', command= lambda: UpdateEvaluateFunction(data), padx=20)
-    button_done.grid(row=1,columnspan=2,pady=20)
-
-    root.mainloop()  
 
 #This class loads and renders the library the user to pick from. 
 class RenderLibrary:
@@ -615,12 +640,20 @@ class RenderLibrary:
     def OpenPolicyView(self, event):
         index = event.widget.curselection()[0]
         policyJson = self.loaded_policies[index]
-        top = Toplevel()
-        top.title(self.loaded_policies[index]['Name'])
+        
         
 
+        # policyCreator = PolicyCreator()
+        # policyCreator.policy.PopulateFromJson(policyJson)
+        # policyCreator.EditPolicy()
+        # policy = policyCreator.policy
         policy = Policy()
         policy.PopulateFromJson(policyJson)
+
+
+        
+        top = Toplevel()
+        top.title(self.loaded_policies[index]['Name'])
         
 
         frame = Frame(top)
@@ -668,10 +701,11 @@ class RenderLibrary:
             event.widget.selection_clear(index)
             self.my_policies.pop(removeIndex)
 
+        button = ""
         if not self.FindPolicy(index):
-            Button(frame, text= "Add Policy", background='#86C5D8',command= lambda: AddPolicy()).grid(row=2, columnspan=2)
+            button = Button(frame, text= "Add Policy", background='#86C5D8',command= lambda: AddPolicy()).grid(row=2, columnspan=2)
         else:
-            Button(frame, text= "Remove Policy", background='#FA6B84',command= lambda: RemovePolicy(self.removeIndex)).grid(row=2, columnspan=2)
+            button = Button(frame, text= "Remove Policy", background='#FA6B84',command= lambda: RemovePolicy(self.removeIndex)).grid(row=2, columnspan=2)
 
         top.mainloop()  
 
@@ -696,12 +730,12 @@ class RenderLibrary:
 #this class asks whether to 'publish' their assembled policy and does so if it's valid
 class PolicyPublisher:  
     def __init__(self):                    
-        root = Tk()
-        root.title("Publish Policy")
-        frame = Frame(root)
-        frame.place(in_=root, anchor="c", relx=.5, rely=.5)
+        self.root = Tk()
+        self.root.title("Publish Policy")
+        frame = Frame(self.root)
+        frame.place(in_=self.root, anchor="c", relx=.5, rely=.5)
 
-        root.geometry("650x300")
+        self.root.geometry("650x300")
         policy_message_frame = Message(frame,text="Do you want to publish your policy to the library?", width=400)
         policy_message_frame.grid(row=0,columnspan=2)
 
@@ -731,7 +765,7 @@ class PolicyPublisher:
             self.WritePolicyToLibrary('output.xml')
             top.title("Succesfully Published " + name)
             policy_message_frame = Message(frame,text="Your policy \"" + name + "\" has been successfully added to the library!", width=400)
-            button_ok = Button(frame, text= "Ok", command= lambda: quit(), background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
+            button_ok = Button(frame, text= "Ok", command= lambda: self.root.destroy(), background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
             
 
         policy_message_frame.grid(row=0,columnspan=2)
@@ -768,39 +802,32 @@ class FunctionCreator:
     def __init__(self):
 
         # json_str = xmlparser(policy_xml, 'output.json')      
-        root = Tk()
-        root.title("Function Creator")
-        root.geometry("600x300")
+        self.root = Tk()
+        self.root.title("Function Creator")
+        self.root.geometry("500x200")
 
-        frame = Frame(root)
+        frame = Frame(self.root)
         frame.pack()                
 
-        # func_name = LabelFrame(frame, text="Function name")
-        # func_name.grid(row=0,column=0,padx=20)  
-
-        
 
         function_frame = LabelFrame(frame, text="Function path")
-        function_frame.grid(row=1,column=0,columnspan=2)
+        function_frame.grid(row=0,column=0,columnspan=2, padx=20)
 
         type_frame = LabelFrame(frame, text="Function type")
-        type_frame.grid(row=1,column=4)
+        type_frame.grid(row=0,column=4)
 
-        pad_frame = Frame(frame,padx=20)
-        pad_frame.grid(row=1, column=3)
 
         function_path = Entry(function_frame)
         function_path.grid(row=0,column=0)
 
         self.switch_func = False
         
-        
 
         button_func_type = Button(type_frame, background='#86C5D8', text="Compute" if self.switch_func else "Evaluate",command= lambda: self.Switch(button_func_type),justify=CENTER)
         button_func_type.grid(row=0, column=0, padx=10,pady=5)
 
     
-        button_done = Button(root, text="Done", background='#86C5D8', command= lambda : self.WriteFunctionIfValid(root, function_path.get(), button_func_type.cget("text")), padx=20, justify=CENTER)
+        button_done = Button(self.root, text="Done", background='#86C5D8', command= lambda : self.WriteFunctionIfValid(function_path.get(), button_func_type.cget("text")), padx=20, justify=CENTER)
         button_done.pack(pady=20)
 
         mainloop()
@@ -812,13 +839,13 @@ class FunctionCreator:
         else:
             button.config(text="Compute")
 
-    def WriteFunctionIfValid(self,root, path, func_type):
+    def WriteFunctionIfValid(self, path, func_type):
         self.func_path = path
         self.func_type = func_type
         if self.ValidCode():
             if not self.FunctionNameTaken():
                 self.WriteFunction()
-                root.destroy()
+                self.root.destroy()
             else:
                 top = Toplevel()
                 frame = Frame(top)
@@ -851,10 +878,23 @@ class FunctionCreator:
         top = Toplevel()
         frame = Frame(top)
         frame.pack()
-
+        import webbrowser
         err_message = Message(frame, text=errors)
         err_message.pack()
         top.bind("<FocusOut>", lambda event: event.widget.destroy())
+
+        #open the function file but keep the function creator windows on top
+        try:
+            if sys.platform == "win32":
+                os.startfile(self.func_path)
+            elif sys.platform.startswith("linux"):
+                subprocess.call(["xdg-open", self.func_path])
+        except:
+            webbrowser.open(self.func_path)
+
+        
+        self.root.attributes('-topmost',1)
+        top.attributes('-topmost',1)
         top.mainloop()
 
     def WriteFunction(self):
@@ -870,16 +910,15 @@ class FunctionCreator:
             f1.write('\n'+ '\n' + f2.read())
         
         # writing the name to the library as well
-        library = json.load(open('library.json','r'))                   
-        function_to_add = {"Name" : self.name}
-        library[self.func_type + "Functions"].append(function_to_add)
-        json_string = json.dumps(library, indent=4)
-        out = open('library.json', "w", encoding='utf-8')
-        out.write(json_string)
-        out.close()
+        # library = json.load(open('library.json','r'))                   
+        # function_to_add = {"Name" : self.name}
+        # library[self.func_type + "Functions"].append(function_to_add)
+        # json_string = json.dumps(library, indent=4)
+        # out = open('library.json', "w", encoding='utf-8')
+        # out.write(json_string)
+        # out.close()
 
     def FunctionNameTaken(self):
-        from user_functions import evaluate_functions, compute_functions
         if self.func_type == "Compute":
            if self.name in dir(compute_functions): 
                return True
@@ -888,7 +927,7 @@ class FunctionCreator:
                 return True
         return False
 
-def getFuncDict(objLists, dictionaries):
+def getFuncDict(objLists, dictionaries, rules):
     global function_dict
     
     for objList in objLists:
@@ -900,6 +939,10 @@ def getFuncDict(objLists, dictionaries):
         if not dict.imported:
             name = dict.compute.split('(')[0]
             function_dict.update({name : getattr(compute_functions,name)})
+
+    for rule in rules:
+        name = rule.evaluate.split('(')[0]
+        function_dict.update({name : getattr(evaluate_functions,name)})
     print(function_dict)
 
 #this function assembles the xml tree using the policy attributes collected
@@ -1010,11 +1053,12 @@ def UserMode():
         policyCreator = PolicyCreator()
         repeat = True
         while repeat:
+            global cycles
             cycles.clear()
             policyCreator.EditPolicy()
 
             createdPolicy = policyCreator.policy
-            getFuncDict(createdPolicy.objectLists, createdPolicy.dictionaries)
+            getFuncDict(createdPolicy.objectLists, createdPolicy.dictionaries, createdPolicy.rules)
             
             root = CreateXMLTree(createdPolicy.rules, createdPolicy.objectLists, createdPolicy.dictionaries, createdPolicy.description)
             gatherDataObjects(root)
@@ -1030,8 +1074,8 @@ def UserMode():
         my_policies.append(policyCreator.policy)
         print(function_dict)
         FunctionCreator()
-        PolicyPublisher() 
-
+        
+    
     my_rules = []
     my_objectLists = []
     my_dictionaries = []
@@ -1050,6 +1094,7 @@ def UserMode():
     #we can only have one Description object per PolicyRuleSet. In our case it is
     #the description of the last policy that makes up my_policies
     my_description = my_policies[len(my_policies) - 1].description if my_policies else Description("")  
-
+    print(my_rules)
     root = CreateXMLTree(my_rules, my_objectLists, my_dictionaries, my_description)
     WriteXMLTree(root, "output.xml")
+    PolicyPublisher() 

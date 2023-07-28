@@ -1,11 +1,14 @@
-def hiuLlow(funcArgs):
-	return
+def testFunction1(funcArgs):
+    print("testing")
+    
+def testFunction2(funcArgs):
+    print("another test")
+    
+def testFunction3(funcArgs):
+    print("this test")
+    
+def testFunction4(funcArgs):
+    print("another test")
 
 def newTest(funcArgs):
-	return
-
-def newTest1(funcArgs):
-	return
-
-def thisTestingFunc4(funcArgs):
     print("testing")

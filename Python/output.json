@@ -1,29 +1,44 @@
 {
     "PolicyRuleSet": {
         "dtdVersion": "0.1",
-        "PolicyRule": [
+        "PolicyRule": {
+            "name": "1",
+            "quantifier": "for_all",
+            "evaluate": "evalFunction2(@net)"
+        },
+        "ObjectList": [
             {
-                "name": "1",
-                "quantifier": "for_all",
-                "evaluate": "assetCriticality(@networks,@devices)"
+                "name": "test",
+                "imported": "False",
+                "compute": "testFunction2(dev)"
             },
             {
-                "name": "2",
-                "quantifier": "not_forall",
-                "evaluate": "actual(networks)",
-                "Description": "testing rule 2"
+                "name": "fred",
+                "imported": "False",
+                "compute": "testFunction2(test)"
+            },
+            {
+                "name": "fred2",
+                "imported": "False",
+                "compute": "testFunction3(flop)"
             }
         ],
-        "ObjectList": {
-            "name": "devices",
-            "imported": "False",
-            "compute": "testcomputes(devices)"
-        },
-        "Dictionary": {
-            "name": "networks",
-            "imported": "True",
-            "compute": "assetCriticalityNew(networks,devices)"
-        },
-        "Description": "This is the latest test"
+        "Dictionary": [
+            {
+                "name": "net",
+                "imported": "True",
+                "compute": ""
+            },
+            {
+                "name": "dev",
+                "imported": "False",
+                "compute": "testFunction3(net)"
+            },
+            {
+                "name": "flop",
+                "imported": "False",
+                "compute": "testFunction3(fred)"
+            }
+        ]
     }
 }

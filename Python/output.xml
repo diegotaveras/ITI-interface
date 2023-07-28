@@ -1,2 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
-<PolicyRuleSet dtdVersion="0.1" />
+<PolicyRuleSet dtdVersion="0.1">
+  <PolicyRule name="1" quantifier="for_all" evaluate="evalFunction2(@net)" />
+  <ObjectList name="test" imported="False" compute="testFunction2(dev)" />
+  <ObjectList name="fred" imported="False" compute="testFunction2(test)" />
+  <ObjectList name="fred2" imported="False" compute="testFunction3(flop)" />
+  <Dictionary name="net" imported="True" compute="" />
+  <Dictionary name="dev" imported="False" compute="testFunction3(net)" />
+  <Dictionary name="flop" imported="False" compute="testFunction3(fred)" />
+</PolicyRuleSet>

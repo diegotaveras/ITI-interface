@@ -1,2 +1,2 @@
-def thisTestingFunc4(funcArgs):
+def newTest1(funcArgs):
     print("testing")
