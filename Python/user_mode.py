@@ -7,7 +7,7 @@ from xmlparser import xmlparser
 import subprocess
 import os
 from networkx import DiGraph, topological_sort, simple_cycles, selfloop_edges
-from policy_parse import *
+from policy_parse_v2 import gatherDataObjects, parseFunctionCall, DataObject, cycles
 from user_functions import evaluate_functions, compute_functions
 import sys
 
@@ -328,6 +328,9 @@ class PolicyCreator:
         policy_rules_frame = LabelFrame(frame, text="Policy Rules")
         policy_rules_frame.grid(row=2,column=0)
 
+        imported_rules_frame = LabelFrame(frame, text="Imported Rule Groups")
+        imported_rules_frame.grid(row=3,column=1)
+
         policy_objectLists_frame = LabelFrame(frame, text="Policy Object Lists")
         policy_objectLists_frame.grid(row=0,column=0)
 
@@ -336,6 +339,7 @@ class PolicyCreator:
 
         policy_description_frame = LabelFrame(frame, text="Policy Description")
         policy_description_frame.grid(row=3,column=0)
+
 
         ruleListbox = Listbox(policy_rules_frame,selectmode=SINGLE)
         ruleListbox.grid(row=0, column=2)
@@ -377,6 +381,11 @@ class PolicyCreator:
         another_frame2 = Frame(policy_description_frame)
         another_frame2.grid(row=0, column=0, padx=30)
         add_description_button = Button(another_frame2, text="Add description...",command=lambda: description.UpdateDescription(description_entry.get("1.0",'end-1c')))
+        add_description_button.grid(row=0, column=0)    
+
+        another_frame3 = Frame(policy_description_frame)
+        another_frame3.grid(row=0, column=0, padx=30)
+        add_description_button = Button(another_frame2, text="Add ruleset...",command=lambda: description.UpdateDescription(description_entry.get("1.0",'end-1c')))
         add_description_button.grid(row=0, column=0)    
 
         done_button_frame = Frame(frame)
@@ -1036,13 +1045,63 @@ def ShowCycles(cycles):
     root.mainloop()
     return repeat
 
-    
+# this class evaluates the created policy based 
+class PolicyEvaluator:
+    def __init__(self):
+        
+        self.root = Tk()
+        self.root.title("Policy Rule Evaluator")
+        frame = Frame(self.root)
+        frame.place(in_=self.root, anchor="c", relx=.5, rely=.5)
+
+        self.root.geometry("650x300+450+200")
+        policy_message_frame = Message(frame,text="Do you want to evaluate the policy rules you have assembled?", width=400)
+        policy_message_frame.grid(row=0,column=0,columnspan=3)
+
+        # output_xml_label= Label(frame,text="Policy xml file: output.xml")
+        # output_xml_label.grid(row=1,column=0)
+
+        policy_xml_frame = LabelFrame(frame,text="Policy file")
+        policy_xml_frame.grid(row=1,column=0)
+        policy_xml_entry = Entry(policy_xml_frame)
+        policy_xml_entry.insert(END, "output.xml")
+        policy_xml_entry.pack()
+
+
+        flows_json_frame = LabelFrame(frame,text="Flows file (optional)")
+        flows_json_frame.grid(row=1,column=1, padx="20px")
+        flows_file_entry = Entry(flows_json_frame)
+        flows_file_entry.pack()
+
+        network_json_frame = LabelFrame(frame,text="Network file")
+        network_json_frame.grid(row=1,column=2)
+        network_file_entry = Entry(network_json_frame)
+        network_file_entry.pack()
+        
+        self.policy_file = policy_xml_entry.get()
+        self.flows_file = flows_file_entry.get()
+        self.network_file = network_file_entry.get()
+        
+        
+        button_no = Button(frame, text= "No", command= lambda: quit(),background='#FA6B84').grid(row=2, column=0,columnspan=2,ipadx=40, padx=40)
+        button_yes = Button(frame, text= "Yes", command= lambda: self.EvaluatePolicy(),background='#90EF90').grid(row=2, column=1,columnspan=2,ipadx=40)
+        mainloop()
+
+    def EvaluatePolicyRules(self):
+
+        if (self.flows_file == ""):
+            p = subprocess.Popen("python ../scripts/policy_evaluate.py -xml " + self.policy_file + " -network " + self.network_file, stdout=subprocess.PIPE,stderr=subprocess.PIPE, shell=True)
+            print(p.communicate()[1].decode('utf-8'))
+        else:
+            p = subprocess.Popen("python ../scripts/policy_evaluate.py -xml " + self.policy_file + " -flows " + self.flows_file + " -network " + self.network_file, stdout=subprocess.PIPE,stderr=subprocess.PIPE, shell=True)
+            print(p.communicate()[1].decode('utf-8'))
+
+
 
 
 def UserMode():
     my_policies = [] 
     
-
     #RenderLibrary has a boolean field that indicates if user picked DevMode
     #It also has a field of picked policies to be enxtended onto our my_policies array
     pickedPolicies = RenderLibrary() 
@@ -1098,3 +1157,4 @@ def UserMode():
     root = CreateXMLTree(my_rules, my_objectLists, my_dictionaries, my_description)
     WriteXMLTree(root, "output.xml")
     PolicyPublisher() 
+    PolicyEvaluator()
