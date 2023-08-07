@@ -7,7 +7,7 @@ from xmlparser import xmlparser
 import subprocess
 import os
 from networkx import DiGraph, topological_sort, simple_cycles, selfloop_edges
-from policy_parse_v2 import gatherDataObjects, parseFunctionCall, DataObject, cycles
+from policy_parse_v2 import gatherDataObjects, parseFunctionCall, DataObject, cycles, function_dict
 from user_functions import evaluate_functions, compute_functions
 import sys
 
@@ -309,6 +309,7 @@ class RuleGroup:
     def __init__(self):
         self.name = ""
         self.rules = []
+        self.args = ""
         
     def FillRulesListbox(self, listbox):
         for rule in self.rules:
@@ -322,7 +323,12 @@ class RuleGroup:
             rule.setFields(each["PolicyRule"]['quantifier'], each["PolicyRule"]['evaluate'], Description(each["PolicyRule"]['Description']) if "Description" in each else Description(""))
             self.rules.append(rule)
         print(self.rules)
-            
+
+    
+    def AddItem(self,event,ruleListbox, rules, itemsExist):
+        if itemsExist:
+            ruleListbox.insert(END, "Rule Group: " + self.name)
+            # rules.append(RuleGroup(ruleList.size()))    
     
     def OpenView(self,event, ruleGroups, objectLists, dictionaries):
 
@@ -340,9 +346,6 @@ class RuleGroup:
         policy_id_frame = Label(frame, text="Rule Group: " + str(self.name))
         policy_id_frame.grid(row=1,column=0)
 
-        
-        # evaluate =  Listbox(policy_evaluate_frame)
-        # evaluate.pack()
 
         rules_listbox_frame = LabelFrame(frame, text="Rules")
         rules_listbox_frame.grid(row=1,column=1, padx=20)
@@ -352,15 +355,6 @@ class RuleGroup:
 
         self.FillRulesListbox(rules_listbox)
         rules_listbox.bind("<<ListboxSelect>>", lambda event: self.rules[event.widget.curselection()[0]].OpenView(event, objectLists,dictionaries))
-        # description = Entry(p
-        # 
-        # olicy_description_frame)
-        # description.pack()
-
-        # evaluateFunctions = getEvaluateFunctions()
-
-        # for i in range(len(evaluateFunctions)):                
-        #     evaluate.insert(END, evaluateFunctions[i] + "()")
 
         eval_args = LabelFrame(frame,text="Rule Group Arguments")
         eval_args.grid(row=1,column=2,padx=20)  
@@ -375,18 +369,21 @@ class RuleGroup:
 
         arguments = []
 
-        def AddArg(event, arguments):
+        currEvaluate = Label(frame, text= "Current evaluate arguments: " + self.args)
+        currEvaluate.grid(row=0, column=1, columnspan=2, pady=20)
+
+        def AddArg(event, currEvaluate, arguments):
             idx = event.widget.curselection()[0]
             if event.widget.get(idx) not in arguments:
                 event.widget.itemconfig(idx, {'bg':'#90EF90'})
                 arguments.append(event.widget.get(idx))
+            UpdateEvaluateFunction(currEvaluate, Rule(0), data)
             print(arguments)
 
-        args_listbox.bind("<<ListboxSelect>>",  lambda event: AddArg(event, arguments))
-        currEvaluate = Label(frame, text= "Current args: " + )
-        currEvaluate.grid(row=0, column=1, columnspan=2, pady=20)
+        args_listbox.bind("<<ListboxSelect>>",  lambda event: AddArg(event, currEvaluate, arguments))
+        
 
-        def UpdateEvaluateFunction(rule, data):
+        def UpdateEvaluateFunction(currEvaluate, rule, data):
             signature = data + "("
             if rule.quantifier == "for_all":
                 for k in range(len(arguments) - 1):
@@ -396,10 +393,14 @@ class RuleGroup:
                 for k in range(len(arguments) - 1):
                     signature = signature + arguments[k] + ","
                 signature = signature + arguments[-1] + ")"
-            rule.evaluate = signature
-            currEvaluate.config(text="Current evaluate: " + rule.evaluate)
-            currEvaluate = Label(frame, text= "Current evaluate: " + rule.evaluate)
-            currEvaluate.grid(row=0, column=1, columnspan=2, pady=20)
+            if rule.id != 0:
+                rule.evaluate = signature
+            self.args = signature.split("(")[1][:-1]
+            currEvaluate.config(text="Current evaluate arguments: " + self.args)
+            
+            
+            # currEvaluate = Label(frame, text= "Current evaluate arguments: " + rule.evaluate)
+            # currEvaluate.grid(row=0, column=1, columnspan=2, pady=20)
 
         #TODO:
         #highlight listbox args that were picked and maintain the state
@@ -410,14 +411,14 @@ class RuleGroup:
         # EvaluateFunctionView(event, currEvaluate, rule, objectLists, dictionaries, args_listbox)
        
 
-        def BuildRuleGroup():
+        def BuildRuleGroup(currEvaluate):
             for rule in self.rules:
                 evaluate_func = rule.evaluate.split("(")[0]
-                UpdateEvaluateFunction(rule, evaluate_func)
+                UpdateEvaluateFunction(currEvaluate, rule, evaluate_func)
                 
-            return
+            
 
-        Button(frame, text= "Build rule", background='#86C5D8', command= lambda: BuildRuleGroup()).grid(row=3,columnspan=4,pady=10)
+        Button(frame, text= "Build Rule Group", background='#86C5D8', command= lambda: BuildRuleGroup(currEvaluate)).grid(row=3,columnspan=4,pady=10)
 
         top.mainloop()
 
@@ -503,9 +504,9 @@ class PolicyCreator:
         self.FillRuleGroupListbox(ruleGroupListbox)
         inner_rg_frame = Frame(imported_rules_frame)
         inner_rg_frame.grid(row=0, column=0, padx=30)
-        add_rg_button = Button(inner_rg_frame, text="Add rule group...",command=lambda: RuleGroup.AddItem(ruleGroupListbox, rules, dictionaries or objectLists))
+        add_rg_button = Button(inner_rg_frame, text="Add rule group...",command=lambda event: self.ruleGroups[ruleGroupListbox.event.widget.curselection()[0]].AddItem(event,ruleListbox, rules, dictionaries or objectLists))
         add_rg_button.grid(row=0, column=0)
-        ruleGroupListbox.bind("<<ListboxSelect>>", lambda event, arg=self.ruleGroups, arg2=dictionaries, arg3=objectLists: self.ruleGroups[event.widget.curselection()[0]].OpenView(event, arg, arg2, arg3))
+        ruleGroupListbox.bind("<Double-Button-1>", lambda event, arg=self.ruleGroups, arg2=dictionaries, arg3=objectLists: self.ruleGroups[event.widget.curselection()[0]].OpenView(event, arg, arg2, arg3))
 
         description_entry = Text(policy_description_frame, width=50, height=5)
         description_entry.grid(row=0,column=1)
@@ -525,7 +526,9 @@ class PolicyCreator:
         done_button_frame.grid(row=4,column=0,pady=30, columnspan=2)
        
         button_done = Button(done_button_frame, text="Done", background='#86C5D8', command= lambda: root.destroy(),padx=20).pack()
-            
+        for ruleGroup in self.ruleGroups:
+            rules.extend(ruleGroup.rules)    
+
         self.policy.Populate(rules, objectLists, dictionaries, description)
         
         mainloop()
@@ -1090,6 +1093,7 @@ def getFuncDict(objLists, dictionaries, rules):
 
     for rule in rules:
         name = rule.evaluate.split('(')[0]
+        print(name)
         function_dict.update({name : getattr(evaluate_functions,name)})
     print(function_dict)
 
