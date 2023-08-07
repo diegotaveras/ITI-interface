@@ -35,9 +35,8 @@ class Rule:
         if itemsExist:
             ruleList.insert(END, "Policy Rule " + str(ruleList.size() + 1))
             rules.append(Rule(ruleList.size()))
-
-    @staticmethod
-    def OpenView(event,rules,objectLists, dictionaries):
+    
+    def OpenView(self,event,objectLists, dictionaries):
         
         selection = event.widget.curselection()
         print(selection)
@@ -50,7 +49,7 @@ class Rule:
         top.geometry("600x350")
         frame = Frame(top)
         frame.pack()
-        policy_id_frame = Label(frame, text="Rule " + str(rules[index].id))
+        policy_id_frame = Label(frame, text="Rule " + str(self.id))
         policy_id_frame.grid(row=1,column=0)
 
         policy_quantifier_frame = LabelFrame(frame, text="Quantifier")
@@ -59,10 +58,10 @@ class Rule:
         quantifier_options = {1:'for_all', 2: 'not_forall', 3:'exists', 4:'not_exists'}
         quantifier_to_options = { value:str(key) for key, value in quantifier_options.items()}
 
-        v = IntVar(value= quantifier_to_options[rules[index].quantifier] if rules[index].quantifier != "" else 1)
+        v = IntVar(value= quantifier_to_options[self.quantifier] if self.quantifier != "" else 1)
     
         def Change(event):
-            rules[index].quantifier = quantifier_options[v.get()]
+            self.quantifier = quantifier_options[v.get()]
 
         for_all = Radiobutton(policy_quantifier_frame, variable=v, value=1,text="for_all",command=lambda:Change(event)).pack(anchor=W)
         not_forall = Radiobutton(policy_quantifier_frame, variable=v, value=2,text="not_forall",command=lambda:Change(event)).pack(anchor=W)
@@ -91,16 +90,16 @@ class Rule:
 
         args_listbox = Listbox(eval_args, selectmode=MULTIPLE, activestyle='none')    
         args_listbox.grid(row=0,column=1) 
-        currEvaluate = Label(frame, text= "Current evaluate: " + rules[index].evaluate)
+        currEvaluate = Label(frame, text= "Current evaluate: " + self.evaluate)
         currEvaluate.grid(row=0, column=2, columnspan=3, pady=20)
-        evaluate.bind("<<ListboxSelect>>" , lambda event: EvaluateFunctionView(event, currEvaluate, rules[index], objectLists, dictionaries, args_listbox))
+        evaluate.bind("<<ListboxSelect>>" , lambda event: EvaluateFunctionView(event, currEvaluate, self, objectLists, dictionaries, args_listbox))
         
-        description.insert(INSERT, rules[index].description)
+        description.insert(INSERT, self.description)
 
        
 
         def BuildRule():
-            rules[index].setFields(quantifier_options[v.get()], rules[index].evaluate, Description(description.get()))
+            self.setFields(quantifier_options[v.get()], self.evaluate, Description(description.get()))
             top.destroy()
 
         Button(frame, text= "Build rule", background='#86C5D8', command= lambda: BuildRule()).grid(row=3,columnspan=4,pady=10)
@@ -127,6 +126,7 @@ class ObjectList:
         objectLists.append(ObjectList(name))
         entry.delete(0,END)
 
+    
     @staticmethod
     def OpenView(event,dictionaries, objectLists):
         selection = event.widget.curselection()
@@ -269,6 +269,7 @@ class Policy:
         policyJson = policy["PolicyRuleSet"]
         for each in policyJson:
             if each == "PolicyRule":
+                #the option for whether a dict or array is present in case it's just a singular item
                 if type(policyJson[each]) is dict:
                     rule = Rule(policyJson[each]['name'])
                     rule.setFields(policyJson[each]['quantifier'], policyJson[each]['evaluate'], Description(policyJson[each]['Description']) if "Description" in policyJson[each] else Description(""))
@@ -304,6 +305,127 @@ class Policy:
             elif each == "Description":
                 self.description.UpdateDescription(policyJson[each])
 
+class RuleGroup:
+    def __init__(self):
+        self.name = ""
+        self.rules = []
+        
+    def FillRulesListbox(self, listbox):
+        for rule in self.rules:
+            listbox.insert(END,"Rule: " + rule.id)
+
+    def PopulateFromJSON(self, ruleGroupJson):
+        self.name = ruleGroupJson["Name"]
+        for each in ruleGroupJson["Rules"]:
+            
+            rule = Rule(each["PolicyRule"]['name'])
+            rule.setFields(each["PolicyRule"]['quantifier'], each["PolicyRule"]['evaluate'], Description(each["PolicyRule"]['Description']) if "Description" in each else Description(""))
+            self.rules.append(rule)
+        print(self.rules)
+            
+    
+    def OpenView(self,event, ruleGroups, objectLists, dictionaries):
+
+        selection = event.widget.curselection()
+        print(selection)
+        index = selection[0]
+        data = event.widget.get(index)
+
+        top = Toplevel()
+        top.title(data)
+
+        top.geometry("600x350")
+        frame = Frame(top)
+        frame.pack()
+        policy_id_frame = Label(frame, text="Rule Group: " + str(self.name))
+        policy_id_frame.grid(row=1,column=0)
+
+        
+        # evaluate =  Listbox(policy_evaluate_frame)
+        # evaluate.pack()
+
+        rules_listbox_frame = LabelFrame(frame, text="Rules")
+        rules_listbox_frame.grid(row=1,column=1, padx=20)
+
+        rules_listbox = Listbox(rules_listbox_frame, selectmode=SINGLE, activestyle='none')    
+        rules_listbox.grid(row=1,column=1) 
+
+        self.FillRulesListbox(rules_listbox)
+        rules_listbox.bind("<<ListboxSelect>>", lambda event: self.rules[event.widget.curselection()[0]].OpenView(event, objectLists,dictionaries))
+        # description = Entry(p
+        # 
+        # olicy_description_frame)
+        # description.pack()
+
+        # evaluateFunctions = getEvaluateFunctions()
+
+        # for i in range(len(evaluateFunctions)):                
+        #     evaluate.insert(END, evaluateFunctions[i] + "()")
+
+        eval_args = LabelFrame(frame,text="Rule Group Arguments")
+        eval_args.grid(row=1,column=2,padx=20)  
+
+        args_listbox = Listbox(eval_args, selectmode=MULTIPLE, activestyle='none')    
+        args_listbox.grid(row=1,column=1) 
+
+        for i in range(len(objectLists)):
+            args_listbox.insert(END, objectLists[i].name)
+        for i in range(len(dictionaries)):
+            args_listbox.insert(END, dictionaries[i].name)
+
+        arguments = []
+
+        def AddArg(event, arguments):
+            idx = event.widget.curselection()[0]
+            if event.widget.get(idx) not in arguments:
+                event.widget.itemconfig(idx, {'bg':'#90EF90'})
+                arguments.append(event.widget.get(idx))
+            print(arguments)
+
+        args_listbox.bind("<<ListboxSelect>>",  lambda event: AddArg(event, arguments))
+        currEvaluate = Label(frame, text= "Current args: " + )
+        currEvaluate.grid(row=0, column=1, columnspan=2, pady=20)
+
+        def UpdateEvaluateFunction(rule, data):
+            signature = data + "("
+            if rule.quantifier == "for_all":
+                for k in range(len(arguments) - 1):
+                    signature = signature + "@" + arguments[k] + ","
+                signature = signature + "@" + arguments[-1] + ")"
+            else:
+                for k in range(len(arguments) - 1):
+                    signature = signature + arguments[k] + ","
+                signature = signature + arguments[-1] + ")"
+            rule.evaluate = signature
+            currEvaluate.config(text="Current evaluate: " + rule.evaluate)
+            currEvaluate = Label(frame, text= "Current evaluate: " + rule.evaluate)
+            currEvaluate.grid(row=0, column=1, columnspan=2, pady=20)
+
+        #TODO:
+        #highlight listbox args that were picked and maintain the state
+
+        # evaluate.bind("<<ListboxSelect>>" , lambda event: EvaluateFunctionView(event, currEvaluate, ruleGroups[index], [], [], args_listbox))
+        
+        # description.insert(INSERT, ruleGroups[index].description)
+        # EvaluateFunctionView(event, currEvaluate, rule, objectLists, dictionaries, args_listbox)
+       
+
+        def BuildRuleGroup():
+            for rule in self.rules:
+                evaluate_func = rule.evaluate.split("(")[0]
+                UpdateEvaluateFunction(rule, evaluate_func)
+                
+            return
+
+        Button(frame, text= "Build rule", background='#86C5D8', command= lambda: BuildRuleGroup()).grid(row=3,columnspan=4,pady=10)
+
+        top.mainloop()
+
+    
+
+
+
+
 class PolicyCreator:
     def __init__(self):
 
@@ -321,6 +443,7 @@ class PolicyCreator:
         objectLists = self.policy.objectLists
         dictionaries = self.policy.dictionaries
         description = self.policy.description
+        self.ruleGroups = []
 
         frame = Frame(root)
         frame.pack()
@@ -329,26 +452,26 @@ class PolicyCreator:
         policy_rules_frame.grid(row=2,column=0)
 
         imported_rules_frame = LabelFrame(frame, text="Imported Rule Groups")
-        imported_rules_frame.grid(row=3,column=1)
+        imported_rules_frame.grid(row=2,column=1)
 
         policy_objectLists_frame = LabelFrame(frame, text="Policy Object Lists")
-        policy_objectLists_frame.grid(row=0,column=0)
+        policy_objectLists_frame.grid(row=0,column=0, columnspan=2)
 
         policy_dictionaries_frame = LabelFrame(frame, text="Policy Dictionaries")
-        policy_dictionaries_frame.grid(row=1,column=0)
+        policy_dictionaries_frame.grid(row=1,column=0, columnspan=2)
 
         policy_description_frame = LabelFrame(frame, text="Policy Description")
-        policy_description_frame.grid(row=3,column=0)
+        policy_description_frame.grid(row=3,column=0,columnspan=2)
 
 
         ruleListbox = Listbox(policy_rules_frame,selectmode=SINGLE)
         ruleListbox.grid(row=0, column=2)
         self.FillRuleListbox(ruleListbox,rules)
-        another_frame = Frame(policy_rules_frame)
-        another_frame.grid(row=0, column=0, padx=30)
-        add_rule_button = Button(another_frame, text="Add rule...",command=lambda: Rule.AddItem(ruleListbox, rules, dictionaries or objectLists))
+        inner_rule_frame = Frame(policy_rules_frame)
+        inner_rule_frame.grid(row=0, column=0, padx=30)
+        add_rule_button = Button(inner_rule_frame, text="Add rule...",command=lambda: Rule.AddItem(ruleListbox, rules, dictionaries or objectLists))
         add_rule_button.grid(row=0, column=0)
-        ruleListbox.bind("<<ListboxSelect>>", lambda event, arg=rules, arg2=objectLists, arg3=dictionaries: Rule.OpenView(event, arg, arg2, arg3))
+        ruleListbox.bind("<<ListboxSelect>>", lambda event, arg2=objectLists, arg3=dictionaries: rules[event.widget.curselection()[0]].OpenView(event, arg2, arg3))
 
         
         objectListListbox = Listbox(policy_objectLists_frame,selectmode=SINGLE)
@@ -375,24 +498,33 @@ class PolicyCreator:
 
         dictionary_entry.grid(row=1,column=0)
 
+        ruleGroupListbox = Listbox(imported_rules_frame,selectmode=SINGLE)
+        ruleGroupListbox.grid(row=0, column=2)
+        self.FillRuleGroupListbox(ruleGroupListbox)
+        inner_rg_frame = Frame(imported_rules_frame)
+        inner_rg_frame.grid(row=0, column=0, padx=30)
+        add_rg_button = Button(inner_rg_frame, text="Add rule group...",command=lambda: RuleGroup.AddItem(ruleGroupListbox, rules, dictionaries or objectLists))
+        add_rg_button.grid(row=0, column=0)
+        ruleGroupListbox.bind("<<ListboxSelect>>", lambda event, arg=self.ruleGroups, arg2=dictionaries, arg3=objectLists: self.ruleGroups[event.widget.curselection()[0]].OpenView(event, arg, arg2, arg3))
+
         description_entry = Text(policy_description_frame, width=50, height=5)
         description_entry.grid(row=0,column=1)
 
-        another_frame2 = Frame(policy_description_frame)
-        another_frame2.grid(row=0, column=0, padx=30)
-        add_description_button = Button(another_frame2, text="Add description...",command=lambda: description.UpdateDescription(description_entry.get("1.0",'end-1c')))
-        add_description_button.grid(row=0, column=0)    
+        inner_desc_frame = Frame(policy_description_frame)
+        inner_desc_frame.grid(row=0, column=0, padx=30)
+        add_description_button = Button(inner_desc_frame, text="Add description...",command=lambda: description.UpdateDescription(description_entry.get("1.0",'end-1c') and add_description_button.config(background='#90EF90')))
+        add_description_button.grid(row=0, column=0)
 
-        another_frame3 = Frame(policy_description_frame)
-        another_frame3.grid(row=0, column=0, padx=30)
-        add_description_button = Button(another_frame2, text="Add ruleset...",command=lambda: description.UpdateDescription(description_entry.get("1.0",'end-1c')))
-        add_description_button.grid(row=0, column=0)    
-
+        def ChangeColor(event, button):
+            description_entry.edit_modified(False)
+            button.config(background="#ffffff")
+            
+        description_entry.bind("<<Modified>>", lambda event, button=add_description_button: ChangeColor(event,button))
+        
         done_button_frame = Frame(frame)
-        done_button_frame.grid(row=4,column=0,pady=30)
+        done_button_frame.grid(row=4,column=0,pady=30, columnspan=2)
        
         button_done = Button(done_button_frame, text="Done", background='#86C5D8', command= lambda: root.destroy(),padx=20).pack()
-      
             
         self.policy.Populate(rules, objectLists, dictionaries, description)
         
@@ -413,6 +545,15 @@ class PolicyCreator:
         for i in range(len(items)):
             listbox.insert(END, items[i].name)
 
+    def FillRuleGroupListbox(self, listbox):
+        library = json.load(open('library.json'))
+        loaded_ruleGroups = library["RuleGroups"]
+    
+        for i in range(len(loaded_ruleGroups)):
+            ruleGroup = RuleGroup()
+            ruleGroup.PopulateFromJSON(loaded_ruleGroups[i])
+            listbox.insert(END, ruleGroup.name)
+            self.ruleGroups.append(ruleGroup)
         
 
 def CycleDetect(dictionaries, obj_lists):
@@ -577,6 +718,7 @@ def EvaluateFunctionView(event, currEvaluate, rule, objectLists, dictionaries, a
             arguments.append(event.widget.get(idx))
         print(arguments)
         UpdateEvaluateFunction(data)
+
     args_listbox.bind("<<ListboxSelect>>",  lambda event: AddArg(event, arguments))
 
     def UpdateEvaluateFunction(data):
@@ -659,12 +801,9 @@ class RenderLibrary:
         policy = Policy()
         policy.PopulateFromJson(policyJson)
 
-
-        
         top = Toplevel()
         top.title(self.loaded_policies[index]['Name'])
         
-
         frame = Frame(top)
         frame.pack()
         policy_rules_frame = LabelFrame(frame, text= "Rules")
@@ -682,7 +821,7 @@ class RenderLibrary:
         rulesListbox = Listbox(policy_rules_frame,selectmode=SINGLE)
         self.FillRuleListbox(rulesListbox, policy.rules)
         rulesListbox.grid(row=0, column=0)
-        rulesListbox.bind("<<ListboxSelect>>", lambda event, arg=policy.rules, arg2=policy.objectLists, arg3=policy.dictionaries: Rule.OpenView(event, arg, arg2, arg3))
+        rulesListbox.bind("<<ListboxSelect>>", lambda event, arg2=policy.objectLists, arg3=policy.dictionaries: policy.rules[event.widget.curselection()[0]].OpenView(event, arg2, arg3))
 
         objectListsListbox = Listbox(policy_objectLists_frame,selectmode=SINGLE)
         self.FillObjectListListbox(objectListsListbox, policy.objectLists)
