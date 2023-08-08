@@ -3,7 +3,7 @@ from tkinter import filedialog
 import xml.etree.ElementTree as ET
 import inspect
 import json
-from xmlparser import xmlparser
+from util import xmlparser
 import subprocess
 import os
 from networkx import DiGraph, topological_sort, simple_cycles, selfloop_edges
@@ -913,9 +913,11 @@ class PolicyPublisher:
         policy_message_frame = Message(frame,text="Do you want to publish your policy to the library?", width=400)
         policy_message_frame.grid(row=0,columnspan=2)
 
-        my_policy_name = Entry(frame)
-        my_policy_name.grid(row=1,columnspan=2,pady=10)
-        button_no = Button(frame, text= "No", command= lambda: quit(),background='#FA6B84').grid(row=2, column=0,ipadx=40, padx=40)
+        policy_name_frame = LabelFrame(frame, text="Policy Name")
+        policy_name_frame.grid(row=1,columnspan=2,pady=10)
+        my_policy_name = Entry(policy_name_frame)
+        my_policy_name.grid(row=0, column=0)
+        button_no = Button(frame, text= "No", command= lambda: quit(),background='#FA6B84').grid(row=2, column=0,ipadx=40)
         button_yes = Button(frame, text= "Yes", command= lambda: self.AddPolicyIfValid(my_policy_name.get()),background='#90EF90').grid(row=2, column=1,ipadx=40)
         mainloop()
 
@@ -936,7 +938,7 @@ class PolicyPublisher:
             policy_message_frame = Message(frame,text="The name your provided is already present in the library. Please provide a unique name.", width=400)
             button_ok = Button(frame, text= "Ok", command= lambda: top.destroy(),background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
         else:
-            self.WritePolicyToLibrary('output.xml')
+            self.WritePolicyToLibrary('policy.xml')
             top.title("Succesfully Published " + name)
             policy_message_frame = Message(frame,text="Your policy \"" + name + "\" has been successfully added to the library!", width=400)
             button_ok = Button(frame, text= "Ok", command= lambda: self.root.destroy(), background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
@@ -957,7 +959,7 @@ class PolicyPublisher:
     #this function parses the xml file of the user's newly created policy
     #it creates a json object out of this policy to then write to the library.json
     def WritePolicyToLibrary(self,policy_xml):
-        json_str = xmlparser(policy_xml, 'output.json')                        
+        json_str = xmlparser(policy_xml, 'policy.json')                        
         library = json.load(open('library.json','r'))                   
 
         policy_to_add = {"Name" : self.name}
@@ -975,7 +977,6 @@ class PolicyPublisher:
 class FunctionCreator:
     def __init__(self):
 
-        # json_str = xmlparser(policy_xml, 'output.json')      
         self.root = Tk()
         self.root.title("Function Creator")
         self.root.geometry("500x200")
@@ -1121,7 +1122,7 @@ def getFuncDict(objLists, dictionaries, rules):
     print(function_dict)
 
 #this function assembles the xml tree using the policy attributes collected
-# at the end the function also writes this tree to 'output.xml'
+# at the end the function also writes this tree to 'policy.xml'
 #returns the root of the xml tree object
 def CreateXMLTree(rules, objectLists, dictionaries, description):           
     policyRuleSet = ET.Element("PolicyRuleSet")                                 
@@ -1228,7 +1229,7 @@ class PolicyEvaluator:
         policy_xml_frame = LabelFrame(frame,text="Policy file")
         policy_xml_frame.grid(row=1,column=0)
         policy_xml_entry = Entry(policy_xml_frame)
-        policy_xml_entry.insert(END, "output.xml")
+        policy_xml_entry.insert(END, "policy.xml")
         policy_xml_entry.pack()
 
 
@@ -1319,6 +1320,6 @@ def UserMode():
     my_description = my_policies[len(my_policies) - 1].description if my_policies else Description("")  
     print(my_rules)
     root = CreateXMLTree(my_rules, my_objectLists, my_dictionaries, my_description)
-    WriteXMLTree(root, "output.xml")
+    WriteXMLTree(root, "policy.xml")
     PolicyPublisher() 
     PolicyEvaluator()

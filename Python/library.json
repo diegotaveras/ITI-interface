@@ -1,4 +1,46 @@
-{
+{   
+    "RuleGroups": [
+        {
+            "Name": "NIST Standard",
+            "Rules": [
+                {
+                    "PolicyRule": {
+                        "name": "1",
+                        "quantifier": "for_all",
+                        "evaluate": "evalFunction3()"
+                    }
+                },
+                {
+                    "PolicyRule": {
+                        "name": "2",
+                        "quantifier": "for_all",
+                        "evaluate": "evalFunction2()"
+                    }
+                }
+            ]
+        },
+        {
+            "Name": "NIST Standard",
+            "Rules": [
+                {
+                    "PolicyRule": {
+                        "name": "1",
+                        "quantifier": "for_all",
+                        "evaluate": "evalFunction3()"
+                    }
+                },
+                {
+                    "PolicyRule": {
+                        "name": "2",
+                        "quantifier": "for_all",
+                        "evaluate": "evalFunction2()"
+                    }
+                }
+            ]
+        }
+
+    ],
+
     "Policies": [
         {
             "Name": "testingWrite2",
