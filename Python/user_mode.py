@@ -19,6 +19,7 @@ class Description:
         self.description = desc
 
 class Rule:
+    num_rules = 0
     def __init__(self, id):
         self.id = id
         self.quantifier = "for_all"
@@ -33,8 +34,10 @@ class Rule:
     #only allows adding a rule if at least an object list or dictionary exists
     def AddItem(ruleList, rules, itemsExist):
         if itemsExist:
-            ruleList.insert(END, "Policy Rule " + str(ruleList.size() + 1))
-            rules.append(Rule(ruleList.size()))
+            rule_num = Rule.num_rules + 1
+            ruleList.insert(END, "Policy Rule " + str(rule_num))
+            rules.append(Rule(str(rule_num)))
+            Rule.num_rules += 1
     
     def OpenView(self,event,objectLists, dictionaries):
         
@@ -42,6 +45,8 @@ class Rule:
         print(selection)
         index = selection[0]
         data = event.widget.get(index)
+        
+            
 
         top = Toplevel()
         top.title(data)
@@ -95,8 +100,6 @@ class Rule:
         evaluate.bind("<<ListboxSelect>>" , lambda event: EvaluateFunctionView(event, currEvaluate, self, objectLists, dictionaries, args_listbox))
         
         description.insert(INSERT, self.description)
-
-       
 
         def BuildRule():
             self.setFields(quantifier_options[v.get()], self.evaluate, Description(description.get()))
@@ -325,12 +328,13 @@ class RuleGroup:
         print(self.rules)
 
     
-    def AddItem(self,event,ruleListbox, rules, itemsExist):
+    def AddItem(self,ruleListbox, ruleGroups, itemsExist):
+        print("hey")
         if itemsExist:
-            ruleListbox.insert(END, "Rule Group: " + self.name)
-            # rules.append(RuleGroup(ruleList.size()))    
+            ruleListbox.insert(END, self.name + "<Group>")
+            ruleGroups.append(self)    
     
-    def OpenView(self,event, ruleGroups, objectLists, dictionaries):
+    def OpenView(self,event, objectLists, dictionaries):
 
         selection = event.widget.curselection()
         print(selection)
@@ -444,6 +448,7 @@ class PolicyCreator:
         objectLists = self.policy.objectLists
         dictionaries = self.policy.dictionaries
         description = self.policy.description
+        self.ruleGroups_library = []
         self.ruleGroups = []
 
         frame = Frame(root)
@@ -465,14 +470,31 @@ class PolicyCreator:
         policy_description_frame.grid(row=3,column=0,columnspan=2)
 
 
+        self.map = {}
+        self.idx = 0
+        
+
         ruleListbox = Listbox(policy_rules_frame,selectmode=SINGLE)
         ruleListbox.grid(row=0, column=2)
+
+        def ViewRule(event):
+            idx = event.widget.curselection()[0]
+            name = ruleListbox.get(idx)
+            if (name[-7:] == "<Group>"):
+                for each in self.ruleGroups:
+                    if each.name == name[:-7]:
+                        each.OpenView(event, dictionaries, objectLists)
+            else:
+                for each in rules:
+                    if each.id == name[-1:]:
+                        rules[idx].OpenView(event, dictionaries, objectLists)
+
         self.FillRuleListbox(ruleListbox,rules)
         inner_rule_frame = Frame(policy_rules_frame)
         inner_rule_frame.grid(row=0, column=0, padx=30)
         add_rule_button = Button(inner_rule_frame, text="Add rule...",command=lambda: Rule.AddItem(ruleListbox, rules, dictionaries or objectLists))
         add_rule_button.grid(row=0, column=0)
-        ruleListbox.bind("<<ListboxSelect>>", lambda event, arg2=objectLists, arg3=dictionaries: rules[event.widget.curselection()[0]].OpenView(event, arg2, arg3))
+        ruleListbox.bind("<<ListboxSelect>>", lambda event, arg2=objectLists, arg3=dictionaries:  ViewRule(event)) 
 
         
         objectListListbox = Listbox(policy_objectLists_frame,selectmode=SINGLE)
@@ -504,10 +526,10 @@ class PolicyCreator:
         self.FillRuleGroupListbox(ruleGroupListbox)
         inner_rg_frame = Frame(imported_rules_frame)
         inner_rg_frame.grid(row=0, column=0, padx=30)
-        add_rg_button = Button(inner_rg_frame, text="Add rule group...",command=lambda event: self.ruleGroups[ruleGroupListbox.event.widget.curselection()[0]].AddItem(event,ruleListbox, rules, dictionaries or objectLists))
+        add_rg_button = Button(inner_rg_frame, text="Add rule group...",command=lambda: self.ruleGroups_library[ruleGroupListbox.curselection()[0]].AddItem(ruleListbox, self.ruleGroups, dictionaries or objectLists))
         add_rg_button.grid(row=0, column=0)
-        ruleGroupListbox.bind("<Double-Button-1>", lambda event, arg=self.ruleGroups, arg2=dictionaries, arg3=objectLists: self.ruleGroups[event.widget.curselection()[0]].OpenView(event, arg, arg2, arg3))
-
+        ruleGroupListbox.bind("<Double-Button-1>", lambda event, arg=self.ruleGroups_library, arg2=dictionaries, arg3=objectLists: self.ruleGroups_library[event.widget.curselection()[0]].OpenView(event, arg2, arg3))
+        
         description_entry = Text(policy_description_frame, width=50, height=5)
         description_entry.grid(row=0,column=1)
 
@@ -556,7 +578,8 @@ class PolicyCreator:
             ruleGroup = RuleGroup()
             ruleGroup.PopulateFromJSON(loaded_ruleGroups[i])
             listbox.insert(END, ruleGroup.name)
-            self.ruleGroups.append(ruleGroup)
+            self.ruleGroups_library.append(ruleGroup)
+            map
         
 
 def CycleDetect(dictionaries, obj_lists):
@@ -1198,11 +1221,9 @@ class PolicyEvaluator:
         frame.place(in_=self.root, anchor="c", relx=.5, rely=.5)
 
         self.root.geometry("650x300+450+200")
-        policy_message_frame = Message(frame,text="Do you want to evaluate the policy rules you have assembled?", width=400)
+        policy_message_frame = Message(frame,text="Do you want to evaluate the policy rules you have assembled?", width=400, pady=20)
         policy_message_frame.grid(row=0,column=0,columnspan=3)
 
-        # output_xml_label= Label(frame,text="Policy xml file: output.xml")
-        # output_xml_label.grid(row=1,column=0)
 
         policy_xml_frame = LabelFrame(frame,text="Policy file")
         policy_xml_frame.grid(row=1,column=0)
@@ -1225,9 +1246,9 @@ class PolicyEvaluator:
         self.flows_file = flows_file_entry.get()
         self.network_file = network_file_entry.get()
         
-        
-        button_no = Button(frame, text= "No", command= lambda: quit(),background='#FA6B84').grid(row=2, column=0,columnspan=2,ipadx=40, padx=40)
-        button_yes = Button(frame, text= "Yes", command= lambda: self.EvaluatePolicy(),background='#90EF90').grid(row=2, column=1,columnspan=2,ipadx=40)
+    
+        button_no = Button(frame, text= "No", command= lambda: quit(),background='#FA6B84').grid(row=2, column=0,columnspan=2,ipadx=40, padx=40, pady=20)
+        button_yes = Button(frame, text= "Yes", command= lambda: self.EvaluatePolicy(),background='#90EF90').grid(row=2, column=1,columnspan=2,ipadx=40,pady=20)
         mainloop()
 
     def EvaluatePolicyRules(self):
