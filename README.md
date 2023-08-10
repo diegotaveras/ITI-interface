@@ -62,7 +62,7 @@ While the following windows/components will open as part of the Dev Mode flow, e
 * Finally, you may define a description for the policy by typing it in the respective textbox and clicking "Add Description...". You may update the description at any time but must always click "Add description..." to save.
 
 
-##### Note on dependencies:
+##### Note on network dependencies:
 
 *You will notice that upon picking the compute function for each of the attributes, these functions' arguments will create dependencies on other previously defined attributes.* 
 
