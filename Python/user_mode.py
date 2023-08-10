@@ -3,7 +3,7 @@ from tkinter import filedialog
 import xml.etree.ElementTree as ET
 import inspect
 import json
-from util import xmlparser
+from util.xmlparser import xmlparser
 import subprocess
 import os
 from networkx import DiGraph, topological_sort, simple_cycles, selfloop_edges
@@ -42,12 +42,9 @@ class Rule:
     def OpenView(self,event,objectLists, dictionaries):
         
         selection = event.widget.curselection()
-        print(selection)
         index = selection[0]
         data = event.widget.get(index)
-        
-            
-
+       
         top = Toplevel()
         top.title(data)
 
@@ -118,7 +115,6 @@ class ObjectList:
     def setFields(self, imported, compute):
         self.imported = imported
         self.compute = compute
-        print(inspect.getmembers(self))
 
     @staticmethod
     def AddItem(objectListListbox, objectLists, entry):
@@ -324,11 +320,9 @@ class RuleGroup:
             rule = Rule(each["PolicyRule"]['name'])
             rule.setFields(each["PolicyRule"]['quantifier'], each["PolicyRule"]['evaluate'], Description(each["PolicyRule"]['Description']) if "Description" in each else Description(""))
             self.rules.append(rule)
-        print(self.rules)
 
     
     def AddItem(self,ruleListbox, ruleGroups, itemsExist):
-        print("hey")
         if itemsExist:
             ruleListbox.insert(END, self.name + "<Group>")
             ruleGroups.append(self)    
@@ -336,7 +330,6 @@ class RuleGroup:
     def OpenView(self,event, objectLists, dictionaries):
 
         selection = event.widget.curselection()
-        print(selection)
         index = selection[0]
         data = event.widget.get(index)
 
@@ -381,7 +374,6 @@ class RuleGroup:
                 event.widget.itemconfig(idx, {'bg':'#90EF90'})
                 arguments.append(event.widget.get(idx))
             UpdateEvaluateFunction(currEvaluate, Rule(0), data)
-            print(arguments)
 
         args_listbox.bind("<<ListboxSelect>>",  lambda event: AddArg(event, currEvaluate, arguments))
         
@@ -468,7 +460,7 @@ class PolicyCreator:
         inner_rule_frame.grid(row=0, column=0, padx=30)
         add_rule_button = Button(inner_rule_frame, text="Add rule...",command=lambda: Rule.AddItem(ruleListbox, rules, dictionaries or objectLists))
         add_rule_button.grid(row=0, column=0)
-        ruleListbox.bind("<<ListboxSelect>>", lambda event:  ViewRule(event)) 
+        ruleListbox.bind("<<ListboxSelect>>", lambda event: ViewRule(event)) 
 
     
         objectListListbox = Listbox(policy_objectLists_frame,selectmode=SINGLE)
@@ -509,9 +501,12 @@ class PolicyCreator:
 
         inner_desc_frame = Frame(policy_description_frame)
         inner_desc_frame.grid(row=0, column=0, padx=30)
-        add_description_button = Button(inner_desc_frame, text="Add description...",command=lambda: description.UpdateDescription(description_entry.get("1.0",'end-1c') and add_description_button.config(background='#90EF90')))
+        add_description_button = Button(inner_desc_frame, text="Add description...",command=lambda: AddDescription())
         add_description_button.grid(row=0, column=0)
 
+        def AddDescription():
+            description.UpdateDescription(description_entry.get("1.0",'end-1c'))
+            add_description_button.config(background='#90EF90')
         def ChangeColor(event, button):
             description_entry.edit_modified(False)
             button.config(background="#ffffff")
@@ -553,7 +548,6 @@ class PolicyCreator:
             ruleGroup.PopulateFromJSON(loaded_ruleGroups[i])
             listbox.insert(END, ruleGroup.name)
             self.ruleGroups_library.append(ruleGroup)
-            map
         
 
 def CycleDetect(dictionaries, obj_lists):
@@ -604,7 +598,6 @@ def CycleDetect(dictionaries, obj_lists):
 
             if arg not in data_object_dict:
                 print('undefined function argument',arg)
-                # exit(1)
                 name_graph.add_edge(name, name)
                 continue
             name_graph.add_edge(arg,name)
@@ -645,7 +638,6 @@ def FillArgsListbox(data, object, args_listbox, objectLists, dictionaries):
         copy.compute = data[:-2] + "(" + objectLists[i].name + ")"
         copy.imported = object.imported
         
-        print(copy.imported)
         if objectLists[i].name != object.name and (objectLists[i].imported or (objectLists[i].compute != "" and not CycleDetect(dictionaries.copy(), objectLists.copy() + [copy]))):
             args_listbox.insert(END, objectLists[i].name)
     for i in range(len(dictionaries)):
@@ -653,7 +645,6 @@ def FillArgsListbox(data, object, args_listbox, objectLists, dictionaries):
         copy.compute = data[:-2] + "(" + dictionaries[i].name + ")"
         copy.imported = object.imported
 
-        print(dictionaries[i].imported)
         if dictionaries[i].name != object.name and (dictionaries[i].imported or (dictionaries[i].compute != "" and not CycleDetect(dictionaries.copy() + [copy], objectLists.copy()) )):
             args_listbox.insert(END, dictionaries[i].name)
 
@@ -674,7 +665,6 @@ def ComputeFunctionView(event, currCompute, object, objectLists, dictionaries, a
         if event.widget.get(idx) not in arguments:
             event.widget.itemconfig(idx, {'bg':'#90EF90'})
             arguments.append(event.widget.get(idx))
-        print(arguments)
         UpdateComputeFunction(data)
 
     args_listbox.bind("<<ListboxSelect>>",  lambda event: AddArg(event, arguments))
@@ -709,7 +699,6 @@ def EvaluateFunctionView(event, currEvaluate, rule, objectLists, dictionaries, a
         if event.widget.get(idx) not in arguments:
             event.widget.itemconfig(idx, {'bg':'#90EF90'})
             arguments.append(event.widget.get(idx))
-        print(arguments)
         UpdateEvaluateFunction(data)
 
     args_listbox.bind("<<ListboxSelect>>",  lambda event: AddArg(event, arguments))
@@ -763,7 +752,7 @@ class PolicyLibrary:
         scrollbar.pack( side = RIGHT, fill = Y )
         library_listbox = Listbox(policies_frame, height=30, activestyle='none',  yscrollcommand = scrollbar.set)
         library_listbox.pack()
-        library_listbox.bind("<Double-Button-1>", lambda event: self.OpenPolicyView(event))
+        library_listbox.bind("<<ListboxSelect>>", lambda event: self.OpenPolicyView(event))
         scrollbar.config( command = library_listbox.yview )
 
         for i in range(len(self.loaded_policies)):
@@ -800,7 +789,7 @@ class PolicyLibrary:
         policy_dictionaries_frame.grid(row=1,column=0)
 
         policy_description_frame = LabelFrame(frame, text= "Description")
-        policy_description_frame.grid(row=1,column=1)
+        policy_description_frame.grid(row=1,column=1, padx=20)
 
         rulesListbox = Listbox(policy_rules_frame,selectmode=SINGLE)
         self.FillRuleListbox(rulesListbox, policy.rules)
@@ -817,7 +806,7 @@ class PolicyLibrary:
         dictionariesListbox.grid(row=0, column=0)
         dictionariesListbox.bind("<<ListboxSelect>>", lambda event, arg=policy.dictionaries, arg2=policy.objectLists: Dictionary.OpenView(event, arg, arg2))
 
-        description_view = Text(policy_description_frame)
+        description_view = Text(policy_description_frame, width=15, height=10)
         description_view.insert(END, policy.description.description)
         description_view.grid(row=0, column=0)
         
@@ -859,8 +848,68 @@ class PolicyLibrary:
         for i in range(len(dictionaries)):
             listbox.insert(END, dictionaries[i].name)
 
+
+# Parent class that includes all children that publish things to the library
+# Children:
+#-> PolicyPublisher
+#-> RuleGroupCreator
+class Publisher:
+    def __init__(self):
+        self.root = Tk()
+    #This function validates the given policy name. It cannot be an empty string
+    #and the name cannot already be present in the library
+    def AddIfValid(self,name, obj_type):                          
+        top = Toplevel()
+        frame = Frame(top)
+        frame.place(in_=top, anchor="c", relx=.5, rely=.5)
+        top.geometry("650x300")
+        self.name = name
+        if self.name == "":
+            top.title("Name Not Valid")
+            policy_message_frame = Message(frame,text="Name cannot be blank. Please enter a name in the field provided.", width=400)
+            button_ok = Button(frame, text= "Ok", command= lambda: top.destroy(),background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
+        elif self.PolicyNameTaken(obj_type):
+            top.title("Name Not Valid")
+            policy_message_frame = Message(frame,text="The name your provided is already present in the library. Please provide a unique name.", width=400)
+            button_ok = Button(frame, text= "Ok", command= lambda: top.destroy(),background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
+        else:
+            self.WriteToLibrary('policy.xml') if obj_type == "Policies" else self.WriteToLibrary(name)
+            top.title("Succesfully Published " + name)
+            type_string = "Policy" if obj_type == "Policies"  else "RuleGroup"
+            policy_message_frame = Message(frame,text="Your " + type_string + "\"" + name + "\" has been successfully added to the library!", width=400)
+            button_ok = Button(frame, text= "Ok", command= lambda: self.root.destroy(), background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
+            
+
+        policy_message_frame.grid(row=0,columnspan=2)
+
+        top.mainloop()
+
+    #this function parses the xml file of the user's newly created policy
+    #it creates a json object out of this policy to then write to the library.json
+    def WriteToLibrary(self,policy_xml):
+        json_str = xmlparser(policy_xml, 'policy.json')                        
+        library = json.load(open('library.json','r'))                   
+
+        policy_to_add = {"Name" : self.name}
+        policy_to_add.update({"PolicyRuleSet": json.loads(json_str)["PolicyRuleSet"]})
+
+        library["Policies"].append(policy_to_add)
+        json_string = json.dumps(library, indent=4)
+
+        out = open('library.json', "w", encoding='utf-8')
+        out.write(json_string)
+        out.close()
+
+    #check if policy name to be added to the library is already present in the library
+    def PolicyNameTaken(self, type):
+        library = json.load(open('library.json','r'))
+        for each in library[type]:
+            if each["Name"] == self.name:
+                return True
+        return False
+
 #this class asks whether to 'publish' their assembled policy and does so if it's valid
-class PolicyPublisher:  
+class PolicyPublisher(Publisher):  
     def __init__(self):                    
         self.root = Tk()
         self.root.title("Publish Policy")
@@ -875,62 +924,11 @@ class PolicyPublisher:
         policy_name_frame.grid(row=1,columnspan=2,pady=10)
         my_policy_name = Entry(policy_name_frame)
         my_policy_name.grid(row=0, column=0)
-        button_no = Button(frame, text= "No", command= lambda: quit(),background='#FA6B84').grid(row=2, column=0,ipadx=40)
-        button_yes = Button(frame, text= "Yes", command= lambda: self.AddPolicyIfValid(my_policy_name.get()),background='#90EF90').grid(row=2, column=1,ipadx=40)
+        button_no = Button(frame, text= "No", command= lambda: self.root.destroy(),background='#FA6B84').grid(row=2, column=0,ipadx=40)
+        button_yes = Button(frame, text= "Yes", command= lambda: self.AddIfValid(my_policy_name.get(), "Policies"),background='#90EF90').grid(row=2, column=1,ipadx=40)
         mainloop()
 
-    #This function validates the given policy name. It cannot be an empty string
-    #and the name cannot already be present in the library
-    def AddPolicyIfValid(self,name):                          
-        top = Toplevel()
-        frame = Frame(top)
-        frame.place(in_=top, anchor="c", relx=.5, rely=.5)
-        top.geometry("650x300")
-        self.name = name
-        if self.name == "":
-            top.title("Name Not Valid")
-            policy_message_frame = Message(frame,text="Name cannot be blank. Please enter a name in the field provided.", width=400)
-            button_ok = Button(frame, text= "Ok", command= lambda: top.destroy(),background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
-        elif self.PolicyNameTaken():
-            top.title("Name Not Valid")
-            policy_message_frame = Message(frame,text="The name your provided is already present in the library. Please provide a unique name.", width=400)
-            button_ok = Button(frame, text= "Ok", command= lambda: top.destroy(),background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
-        else:
-            self.WritePolicyToLibrary('policy.xml')
-            top.title("Succesfully Published " + name)
-            policy_message_frame = Message(frame,text="Your policy \"" + name + "\" has been successfully added to the library!", width=400)
-            button_ok = Button(frame, text= "Ok", command= lambda: self.root.destroy(), background='#86C5D8').grid(row=1, column=0,ipadx=40, padx=40)
-            
-
-        policy_message_frame.grid(row=0,columnspan=2)
-
-        top.mainloop()
-
-    #check if policy name to be added to the library is already present in the library
-    def PolicyNameTaken(self):
-        library = json.load(open('library.json','r'))
-        for each in library["Policies"]:
-            if each["Name"] == self.name:
-                return True
-        return False
     
-    #this function parses the xml file of the user's newly created policy
-    #it creates a json object out of this policy to then write to the library.json
-    def WritePolicyToLibrary(self,policy_xml):
-        json_str = xmlparser(policy_xml, 'policy.json')                        
-        library = json.load(open('library.json','r'))                   
-
-        policy_to_add = {"Name" : self.name}
-        policy_to_add.update({"PolicyRuleSet": json.loads(json_str)["PolicyRuleSet"]})
-
-        library["Policies"].append(policy_to_add)
-        json_string = json.dumps(library, indent=4)
-
-        out = open('library.json', "w", encoding='utf-8')
-        out.write(json_string)
-        out.close()
-        return 
-
 #this class displays the user with the option to add a new compute/evaluate function. It tests the submitted code and function name.
 class FunctionCreator:
     def __init__(self):
@@ -1064,9 +1062,7 @@ def getFuncDict(objLists, dictionaries, rules):
 
     for rule in rules:
         name = rule.evaluate.split('(')[0]
-        print(name)
         function_dict.update({name : getattr(evaluate_functions,name)})
-    print(function_dict)
 
 #this function assembles the xml tree using the policy attributes collected
 # at the end the function also writes this tree to 'policy.xml'
@@ -1194,7 +1190,7 @@ class PolicyEvaluator:
         self.flows_file = flows_file_entry.get()
         self.network_file = network_file_entry.get()
         
-        button_no = Button(frame, text= "No", command= lambda: quit(),background='#FA6B84').grid(row=2, column=0,columnspan=2,ipadx=40, padx=40, pady=20)
+        button_no = Button(frame, text= "No", command= lambda: self.root.destroy(),background='#FA6B84').grid(row=2, column=0,columnspan=2,ipadx=40, padx=40, pady=20)
         button_yes = Button(frame, text= "Yes", command= lambda: self.EvaluatePolicy(),background='#90EF90').grid(row=2, column=1,columnspan=2,ipadx=40,pady=20)
 
         mainloop()
@@ -1208,9 +1204,9 @@ class PolicyEvaluator:
             p = subprocess.Popen("python ../scripts/policy_evaluate.py -xml " + self.policy_file + " -flows " + self.flows_file + " -network " + self.network_file, stdout=subprocess.PIPE,stderr=subprocess.PIPE, shell=True)
             print(p.communicate()[1].decode('utf-8'))
 
-class RuleGroupCreator:
+class RuleGroupCreator(Publisher):
     def __init__(self):
-
+        self.num_rules = 0
         self.root = Tk()
         self.root.title("Rule Group Creator")
         self.root.geometry("500x300+450+200")
@@ -1235,20 +1231,47 @@ class RuleGroupCreator:
 
         inner_rule_frame = Frame(rule_listbox_frame)
         inner_rule_frame.grid(row=0, column=0, padx=30)
-        add_rule_button = Button(inner_rule_frame, text="Add rule...",command=lambda: Rule.AddItem(rules_listbox, rg_rules, True))
+        add_rule_button = Button(inner_rule_frame, text="Add rule...",command=lambda: self.AddItem(rules_listbox, rg_rules, True))
         add_rule_button.grid(row=0, column=0)
-        rules_listbox.bind("<<ListboxSelect>>", lambda event:  rg_rules[event.widget.curselection()[0]].OpenView(event, [], []))  
+        
+        rules_listbox.bind("<<ListboxSelect>>", lambda event: self.OpenView(event, rg_rules[event.widget.curselection()[0]]))  
 
-        button_done = Button(self.root, text="Done", background='#86C5D8',command=self.root.quit(), padx=20, justify=CENTER)
+        self.ruleGroup = RuleGroup()
+        self.ruleGroup.rules = rg_rules
+        
+        button_done = Button(self.root, text="Done", background='#86C5D8',command =  lambda: self.AddIfValid(rg_name.get(), "RuleGroups"), padx=20, justify=CENTER)
         button_done.pack(pady=20)
 
         mainloop()
+    
+    def AddItem(self, ruleList, rules, itemsExist):
+        if itemsExist:
+            rule_num = self.num_rules + 1
+            ruleList.insert(END, "Policy Rule " + str(rule_num))
+            rules.append(Rule(str(rule_num)))
+            self.num_rules += 1
 
+    def WriteToLibrary(self, rg_name):
+        self.ruleGroup.name = rg_name         
+        library = json.load(open('library.json','r'))    
 
-    def OpenView(self,event, objectLists, dictionaries):
+        ruleGroup_to_add = {"Name" : self.ruleGroup.name}
+        ruleGroup_to_add.update({"Rules": []})
+        for rule in self.ruleGroup.rules:
+            rule_map = {"PolicyRule" : {"name" : rule.id, "quantifier" : rule.quantifier, "evaluate" : rule.evaluate}}
+            ruleGroup_to_add["Rules"].append(rule_map)
+        library["RuleGroups"].append(ruleGroup_to_add)
+        json_string = json.dumps(library, indent=4)
+
+        out = open('library.json', "w", encoding='utf-8')
+        out.write(json_string)
+        out.close()
+
+        self.root.quit()
+
+    def OpenView(self,event, rule):
     
         selection = event.widget.curselection()
-        print(selection)
         index = selection[0]
         data = event.widget.get(index)
         
@@ -1259,7 +1282,7 @@ class RuleGroupCreator:
         top.geometry("600x350")
         frame = Frame(top)
         frame.pack()
-        policy_id_frame = Label(frame, text="Rule " + str(self.id))
+        policy_id_frame = Label(frame, text="Rule " + str(rule.id))
         policy_id_frame.grid(row=1,column=0)
 
         policy_quantifier_frame = LabelFrame(frame, text="Quantifier")
@@ -1268,13 +1291,24 @@ class RuleGroupCreator:
         quantifier_options = {1:'for_all', 2: 'not_forall', 3:'exists', 4:'not_exists'}
         quantifier_to_options = { value:str(key) for key, value in quantifier_options.items()}
 
-        v = IntVar(value= quantifier_to_options[self.quantifier] if self.quantifier != "" else 1)
+        v = IntVar(value= quantifier_to_options[rule.quantifier] if rule.quantifier != "" else 1)
 
         def Change(event):
-            self.quantifier = quantifier_options[v.get()]
+            rule.quantifier = quantifier_options[v.get()]
+
+        def EvaluateFunctionView(event, currEvaluate, rule):
+            index = event.widget.curselection()[0]
+            data = event.widget.get(index)
+            
+            rule.evaluate = data
+            currEvaluate.config(text="Current evaluate: " + rule.evaluate)
 
 
-        #TODO :  CREATE THIS OPEN VIEW METHOD FOR THIS PARTICULAR RULE. SHOULD NOT ACCEPT ARGS IN THE EVALUATE FUNC
+
+
+            
+        #TODO :  check if updload to libarry works
+        
 
         for_all = Radiobutton(policy_quantifier_frame, variable=v, value=1,text="for_all",command=lambda:Change(event)).pack(anchor=W)
         not_forall = Radiobutton(policy_quantifier_frame, variable=v, value=2,text="not_forall",command=lambda:Change(event)).pack(anchor=W)
@@ -1298,19 +1332,15 @@ class RuleGroupCreator:
         for i in range(len(evaluateFunctions)):                
             evaluate.insert(END, evaluateFunctions[i] + "()")
 
-        eval_args = LabelFrame(frame,text="Function arguments")
-        eval_args.grid(row=1,column=3,padx=20)  
-
-        args_listbox = Listbox(eval_args, selectmode=MULTIPLE, activestyle='none')    
-        args_listbox.grid(row=0,column=1) 
-        currEvaluate = Label(frame, text= "Current evaluate: " + self.evaluate)
+    
+        currEvaluate = Label(frame, text= "Current evaluate: " + rule.evaluate)
         currEvaluate.grid(row=0, column=2, columnspan=3, pady=20)
-        evaluate.bind("<<ListboxSelect>>" , lambda event: EvaluateFunctionView(event, currEvaluate, self, objectLists, dictionaries, args_listbox))
+        evaluate.bind("<<ListboxSelect>>" , lambda event: EvaluateFunctionView(event, currEvaluate, rule))
         
-        description.insert(INSERT, self.description)
+        description.insert(INSERT, rule.description)
 
         def BuildRule():
-            self.setFields(quantifier_options[v.get()], self.evaluate, Description(description.get()))
+            rule.setFields(quantifier_options[v.get()], rule.evaluate, Description(description.get()))
             top.destroy()
 
         Button(frame, text= "Build rule", background='#86C5D8', command= lambda: BuildRule()).grid(row=3,columnspan=4,pady=10)
@@ -1337,7 +1367,6 @@ def CreatePolicyFile(my_policies):
     #we can only have one Description object per PolicyRuleSet. In our case it is
     #the description of the last policy that makes up my_policies
     my_description = my_policies[len(my_policies) - 1].description if my_policies else Description("")  
-    print(my_rules)
     root = CreateXMLTree(my_rules, my_objectLists, my_dictionaries, my_description)
     WriteXMLTree(root, "policy.xml")
 
@@ -1347,10 +1376,9 @@ def UserMode():
     
     #PolicyLibrary has a boolean field that indicates if user picked DevMode
     #It also has a field of picked policies to be extended onto our my_policies array
-    pickedPolicies = PolicyLibrary() 
+    pickedPolicies = PolicyLibrary()
     devMode = pickedPolicies.switch_dev
     my_policies.extend(pickedPolicies.my_policies)
-
     if devMode:
         policyCreator = PolicyCreator()
         
@@ -1366,21 +1394,18 @@ def UserMode():
             
             root = CreateXMLTree(createdPolicy.rules, createdPolicy.objectLists, createdPolicy.dictionaries, createdPolicy.description)
             gatherDataObjects(root)
-            print(cycles)
             if cycles:
                 #returning True means we want to edit.
                 repeat = ShowCycles(cycles)
-                print(repeat)
             else:
                 repeat = False
                     
-
         my_policies.append(policyCreator.policy)
         
-    CreatePolicyFile(my_policies)
-    
-    PolicyPublisher() 
-    PolicyEvaluator()
-    FunctionCreator()
-    RuleGroupCreator()
+    CreatePolicyFile(my_policies) 
+    if devMode:   
+        PolicyPublisher() 
+        PolicyEvaluator()
+        FunctionCreator()
+        RuleGroupCreator()
 

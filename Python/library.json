@@ -1,4 +1,4 @@
-{   
+{
     "RuleGroups": [
         {
             "Name": "NIST Standard",
@@ -20,7 +20,26 @@
             ]
         },
         {
-            "Name": "NIST Standard",
+            "Name": "FISMA Standard",
+            "Rules": [
+                {
+                    "PolicyRule": {
+                        "name": "1",
+                        "quantifier": "for_all",
+                        "evaluate": "evalFunction1()"
+                    }
+                },
+                {
+                    "PolicyRule": {
+                        "name": "2",
+                        "quantifier": "for_all",
+                        "evaluate": "newTest1()"
+                    }
+                }
+            ]
+        },
+        {
+            "Name": "HIPAA Standard",
             "Rules": [
                 {
                     "PolicyRule": {
@@ -33,14 +52,13 @@
                     "PolicyRule": {
                         "name": "2",
                         "quantifier": "for_all",
-                        "evaluate": "evalFunction2()"
+                        "evaluate": "evalFunction3()"
                     }
                 }
             ]
         }
-
+        
     ],
-
     "Policies": [
         {
             "Name": "testingWrite2",
@@ -160,6 +178,40 @@
                         "compute": "testFunction3(fred)"
                     }
                 ]
+            }
+        },
+        {
+            "Name": "testRun",
+            "PolicyRuleSet": {
+                "dtdVersion": "0.1",
+                "PolicyRule": [
+                    {
+                        "name": "1",
+                        "quantifier": "for_all",
+                        "evaluate": "newTest(@net)"
+                    },
+                    {
+                        "name": "2",
+                        "quantifier": "for_all",
+                        "evaluate": "evalFunction3(@test)"
+                    },
+                    {
+                        "name": "3",
+                        "quantifier": "for_all",
+                        "evaluate": "newTest1(@test,@net)"
+                    }
+                ],
+                "ObjectList": {
+                    "name": "test",
+                    "imported": "False",
+                    "compute": "testFunction2(net)"
+                },
+                "Dictionary": {
+                    "name": "net",
+                    "imported": "True",
+                    "compute": ""
+                },
+                "Description": "This is my current test run dalfna iodnaw"
             }
         }
     ]

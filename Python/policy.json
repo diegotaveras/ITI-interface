@@ -1,44 +1,33 @@
 {
     "PolicyRuleSet": {
         "dtdVersion": "0.1",
-        "PolicyRule": {
-            "name": "1",
-            "quantifier": "for_all",
-            "evaluate": "evalFunction2(@net)"
-        },
-        "ObjectList": [
+        "PolicyRule": [
             {
-                "name": "test",
-                "imported": "False",
-                "compute": "testFunction2(dev)"
+                "name": "1",
+                "quantifier": "for_all",
+                "evaluate": "newTest(@net)"
             },
             {
-                "name": "fred",
-                "imported": "False",
-                "compute": "testFunction2(test)"
+                "name": "2",
+                "quantifier": "for_all",
+                "evaluate": "evalFunction3(@test)"
             },
             {
-                "name": "fred2",
-                "imported": "False",
-                "compute": "testFunction3(flop)"
+                "name": "3",
+                "quantifier": "for_all",
+                "evaluate": "newTest1(@test,@net)"
             }
         ],
-        "Dictionary": [
-            {
-                "name": "net",
-                "imported": "True",
-                "compute": ""
-            },
-            {
-                "name": "dev",
-                "imported": "False",
-                "compute": "testFunction3(net)"
-            },
-            {
-                "name": "flop",
-                "imported": "False",
-                "compute": "testFunction3(fred)"
-            }
-        ]
+        "ObjectList": {
+            "name": "test",
+            "imported": "False",
+            "compute": "testFunction2(net)"
+        },
+        "Dictionary": {
+            "name": "net",
+            "imported": "True",
+            "compute": ""
+        },
+        "Description": "This is my current test run dalfna iodnaw"
     }
 }

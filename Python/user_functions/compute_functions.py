@@ -12,3 +12,6 @@ def testFunction4(funcArgs):
 
 def newTest(funcArgs):
     print("testing")
+
+def superImportantEvaluate(funcArgs):
+    print("testing")

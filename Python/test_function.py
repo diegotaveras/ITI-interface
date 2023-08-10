@@ -1,2 +1,2 @@
-def newTest1(funcArgs):
+def superImportantEvaluate(funcArgs):
     print("testing")

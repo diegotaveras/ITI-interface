@@ -31,6 +31,9 @@ The my-app folder contains the web application made with Angular
 
 ### Dev Mode
 
+Dev Mode is accessed by clicking the button on the top right of the [Policy Library](#policy-library) window. When the button is green, you may close the Policy Library and the Dev Mode flow will begin.
+
+
 Windows found in Dev Mode:
 
 1. [Policy Creator](#policy-creator) (shortcut: create_policy)
@@ -41,7 +44,9 @@ Windows found in Dev Mode:
 
 4. [Function Creator](#function-creator) (shortcut: create_function)
 
-While the following windows/components will open as part of the Dev Mode flow, each window can be opened on its own by using the following command structure:
+5. [Rule Group Creator](#rule-group-creator) (shortcut: create_rulegroup)
+
+While the following windows/components will open as part of the Dev Mode flow, each window can be opened on its own by using the following command structure (can have more than one shortcut):
 
     python interface.py --<shortcut>
 #### Policy Creator
@@ -56,11 +61,6 @@ While the following windows/components will open as part of the Dev Mode flow, e
 
 * Finally, you may define a description for the policy by typing it in the respective textbox and clicking "Add Description...". You may update the description at any time but must always click "Add description..." to save.
 
-##### Rule Groups
-
-Rule Groups are groupings of Policy Rules that may be added in bulk to the user's policy file. This provides users a way to follow certain security standards by simply clicking once on the Rule Group and then clicking "Add Rule Group...". The Rule Group will be added only if 
-
-Best practice is to first inspect your selected Rule Group by double clicking on it. From here you should select the function arguments that every rule in the Rule Group will be evaluated with. After the Rule Group is added to your Policy Rules, you may still change the arguments that you want to evaluate it with. You may also still customize each individual Rule in the Rule Group separately by clicking on it, making your changes, and clicking "Build Rule...".
 
 ##### Note on dependencies:
 
@@ -93,7 +93,9 @@ Best practice is to first inspect your selected Rule Group by double clicking on
 * The Function Creator will determine whether the function code syntax is correct and the function name is valid before successfully adding the function to the *user_functions* directory.
 
 
+#### Rule Group Creator
 
 
+* To add a Rule Group, enter a name in the field provided. Define each rule by picking its quantifier and evaluate function and entering an optional description. Finally, click "Build Rule Group".
 
-
+* A valid Rule Group will be added directly to the *library.json* file.

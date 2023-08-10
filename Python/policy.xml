@@ -1,2 +1,4 @@
 <?xml version='1.0' encoding='utf-8'?>
-<PolicyRuleSet dtdVersion="0.1" />
+<PolicyRuleSet dtdVersion="0.1">
+  <Dictionary name="net" imported="True" compute="" />
+</PolicyRuleSet>
