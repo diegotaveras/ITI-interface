@@ -96,6 +96,6 @@ While the following windows/components will open as part of the Dev Mode flow, e
 #### Rule Group Creator
 
 
-* To add a Rule Group, enter a name in the field provided. Define each rule by picking its quantifier and evaluate function and entering an optional description. Finally, click "Build Rule Group".
+* To add a Rule Group, enter a name in the field provided. Define each rule by picking its quantifier and evaluate function and entering an optional description. Finally, click "Done".
 
 * A valid Rule Group will be added directly to the *library.json* file.
